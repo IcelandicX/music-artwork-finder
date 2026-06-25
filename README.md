@@ -16,7 +16,9 @@ Artwork is fetched from the **iTunes Search API** (high-resolution covers) with 
 
 ### macOS installer (recommended)
 
-Download the latest `MusicFix-*.pkg` from [GitHub Releases](https://github.com/IcelandicX/music-artwork-finder/releases), open it, and follow the prompts.
+**[Download MusicFix-1.0.0.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.0.0/MusicFix-1.0.0.pkg)** — open it and follow the prompts.
+
+For other versions, see [GitHub Releases](https://github.com/IcelandicX/music-artwork-finder/releases).
 
 The installer:
 
