@@ -29,7 +29,11 @@ for file in "${APP_FILES[@]}"; do
     cp "$ROOT/$file" "$PAYLOAD/usr/local/share/music-artwork-finder/"
 done
 cp "$ROOT/scripts/setup-user.sh" "$PAYLOAD/usr/local/share/music-artwork-finder/scripts/"
-cp -R "$ROOT/assets" "$PAYLOAD/usr/local/share/music-artwork-finder/"
+mkdir -p "$PAYLOAD/usr/local/share/music-artwork-finder/assets"
+rsync -a \
+    --exclude '__pycache__/' \
+    --exclude 'icon.iconset/' \
+    "$ROOT/assets/" "$PAYLOAD/usr/local/share/music-artwork-finder/assets/"
 
 ln -sf /usr/local/share/music-artwork-finder/find_artwork.py "$PAYLOAD/usr/local/bin/music-artwork"
 ln -sf /usr/local/share/music-artwork-finder/find_artwork.py "$PAYLOAD/usr/local/bin/find-album-artwork"
