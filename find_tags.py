@@ -50,16 +50,6 @@ class TrackSnapshot:
 
 
 @dataclass(frozen=True)
-class ReleaseMatch:
-    release_id: str
-    title: str
-    artist: str
-    date: str
-    score: float
-    track_count: int
-
-
-@dataclass(frozen=True)
 class TrackTags:
     title: str
     artist: str

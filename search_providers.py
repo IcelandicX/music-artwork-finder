@@ -397,11 +397,19 @@ def lookup_musicbrainz_release(
     track_count: int = 0,
 ) -> dict | None:
     probe = AlbumInfo(artist=artist, album=title, app_name=local_album.app_name)
+    queries: list[str] = []
+    seen_queries: set[str] = set()
+    for source_album in (probe, local_album):
+        for query in musicbrainz_search_queries(source_album):
+            if query not in seen_queries:
+                seen_queries.add(query)
+                queries.append(query)
+
     best: dict | None = None
     best_score = 0.0
 
-    for query in musicbrainz_search_queries(probe):
-        params = urllib.parse.urlencode({"query": query, "fmt": "json", "limit": 5})
+    for query in queries:
+        params = urllib.parse.urlencode({"query": query, "fmt": "json", "limit": 8})
         try:
             payload = fetch_musicbrainz_json(f"{MUSICBRAINZ_SEARCH_URL}?{params}")
         except OSError:
@@ -422,7 +430,7 @@ def lookup_musicbrainz_release(
                 best = release
                 best_score = score
 
-    if best is None or best_score < 0.45:
+    if best is None or best_score < 0.4:
         return None
     return best
 

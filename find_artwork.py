@@ -197,6 +197,12 @@ def musicbrainz_search_queries(album: AlbumInfo) -> list[str]:
 
     queries.append(f'release:"{cleaned_album}"')
 
+    tokens = album_significant_tokens(cleaned_album)
+    if len(tokens) >= 2:
+        queries.append(" AND ".join(f"release:{token}" for token in tokens[:5]))
+    if tokens:
+        queries.append(f"release:{tokens[0]}")
+
     deduped: list[str] = []
     seen: set[str] = set()
     for query in queries:
@@ -204,6 +210,25 @@ def musicbrainz_search_queries(album: AlbumInfo) -> list[str]:
             seen.add(query)
             deduped.append(query)
     return deduped
+
+
+MB_QUERY_STOPWORDS = frozenset(
+    {"music", "from", "the", "and", "for", "with", "vol", "volume", "album", "edition"}
+)
+
+
+def album_significant_tokens(text: str) -> list[str]:
+    tokens: list[str] = []
+    for token in normalize(clean_album_name(text)).split():
+        if len(token) <= 2 or token in MB_QUERY_STOPWORDS:
+            continue
+        if token not in tokens:
+            tokens.append(token)
+    return tokens
+
+
+def is_various_artists(artist_name: str) -> bool:
+    return normalize(clean_artist_name(artist_name)) in {"various artists", "various", "va"}
 
 
 def token_overlap(a: str, b: str) -> float:
@@ -245,6 +270,14 @@ def score_result(album: AlbumInfo, collection_name: str, artist_name: str) -> fl
 
     score = (album_score * 0.65) + (artist_score * 0.35)
     score *= live_album_mismatch_penalty(album.album, collection_name)
+
+    if album_score >= 0.4 and is_various_artists(artist_name):
+        score = max(score, (album_score * 0.92) + 0.05)
+    elif album_score >= 0.4 and any(
+        marker in normalize(album.album)
+        for marker in ("music from", "soundtrack", "sampler", "original cast", " motion picture")
+    ):
+        score = max(score, album_score * 0.85)
 
     if is_likely_single_or_ep(collection_name) and not is_likely_single_or_ep(album.album):
         score *= 0.5
