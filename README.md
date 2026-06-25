@@ -16,7 +16,7 @@ Artwork is fetched from the **iTunes Search API** (high-resolution covers) with 
 
 ### macOS installer (recommended)
 
-Download the latest `MusicFix-*.pkg` from [GitHub Releases](https://github.com/Icelandick/music-artwork-finder/releases), open it, and follow the prompts.
+Download the latest `MusicFix-*.pkg` from [GitHub Releases](https://github.com/IcelandicX/music-artwork-finder/releases), open it, and follow the prompts.
 
 The installer:
 
@@ -37,7 +37,7 @@ open dist/MusicFix-*.pkg
 ### Install from source
 
 ```bash
-git clone https://github.com/Icelandick/music-artwork-finder.git
+git clone https://github.com/IcelandicX/music-artwork-finder.git
 cd music-artwork-finder
 ./install.sh
 ```
@@ -165,4 +165,4 @@ python3 menu_bar.py          # run menu bar app in foreground for debugging
 
 ## Contributing
 
-Issues and pull requests are welcome on [GitHub](https://github.com/Icelandick/music-artwork-finder).
+Issues and pull requests are welcome on [GitHub](https://github.com/IcelandicX/music-artwork-finder).
