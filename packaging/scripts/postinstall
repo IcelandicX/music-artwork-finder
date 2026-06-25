@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euo pipefail
+
+PROJECT_DIR="/usr/local/share/music-artwork-finder"
+SETUP_SCRIPT="$PROJECT_DIR/scripts/setup-user.sh"
+
+if [[ ! -f "$SETUP_SCRIPT" ]]; then
+    echo "Music Fix setup script is missing at $SETUP_SCRIPT" >&2
+    exit 1
+fi
+
+chmod +x "$SETUP_SCRIPT" "$PROJECT_DIR"/*.py
+
+CONSOLE_USER=$(stat -f%Su /dev/console 2>/dev/null || true)
+if [[ -z "$CONSOLE_USER" || "$CONSOLE_USER" == "root" ]]; then
+    echo "Music Fix files were installed, but user setup was skipped because no console user was found."
+    echo "Log in and run: /usr/local/share/music-artwork-finder/scripts/setup-user.sh --setup $PROJECT_DIR"
+    exit 0
+fi
+
+USER_HOME=$(dscl . -read "/Users/$CONSOLE_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}')
+if [[ -z "$USER_HOME" ]]; then
+    USER_HOME=$(eval echo "~$CONSOLE_USER")
+fi
+
+PYTHON3=$(sudo -u "$CONSOLE_USER" env HOME="$USER_HOME" bash -lc 'command -v python3' || true)
+if [[ -z "$PYTHON3" ]]; then
+    PYTHON3="/usr/bin/python3"
+fi
+
+sudo -u "$CONSOLE_USER" env HOME="$USER_HOME" MUSIC_FIX_PYTHON="$PYTHON3" \
+    "$SETUP_SCRIPT" --setup "$PROJECT_DIR"
+
+exit 0

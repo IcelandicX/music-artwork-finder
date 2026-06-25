@@ -19,11 +19,19 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 FIND_ARTWORK = SCRIPT_DIR / "find_artwork.py"
 FIND_TAGS = SCRIPT_DIR / "find_tags.py"
 FIX_ALBUM = SCRIPT_DIR / "fix_album.py"
+MENUBAR_ICON = SCRIPT_DIR / "assets" / "menubar-template@2x.png"
 
 
 class ArtworkMenuBarApp(rumps.App):
     def __init__(self) -> None:
-        super().__init__("Music Fix", quit_button="Quit")
+        icon = str(MENUBAR_ICON) if MENUBAR_ICON.exists() else None
+        super().__init__(
+            "Music Fix",
+            title=None if icon else "Music Fix",
+            icon=icon,
+            template=True,
+            quit_button="Quit",
+        )
         self.menu = [
             "Fix Tags and Artwork",
             None,

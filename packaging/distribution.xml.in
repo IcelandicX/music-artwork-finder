@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Music Fix</title>
+    <organization>com.icelandick</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="true" hostArchitectures="x86_64,arm64"/>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.icelandick.music-artwork-finder"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="com.icelandick.music-artwork-finder" visible="false">
+        <pkg-ref id="com.icelandick.music-artwork-finder"/>
+    </choice>
+    <pkg-ref id="com.icelandick.music-artwork-finder" version="@VERSION@" onConclusion="none">MusicFix-component.pkg</pkg-ref>
+</installer-gui-script>

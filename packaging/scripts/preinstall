@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+
+LABEL="com.music-artwork-finder"
+CONSOLE_USER=$(stat -f%Su /dev/console 2>/dev/null || true)
+
+if [[ -z "$CONSOLE_USER" || "$CONSOLE_USER" == "root" ]]; then
+    exit 0
+fi
+
+USER_UID=$(id -u "$CONSOLE_USER" 2>/dev/null || true)
+if [[ -n "$USER_UID" ]]; then
+    launchctl bootout "gui/$USER_UID/$LABEL" 2>/dev/null || true
+fi
+
+exit 0
