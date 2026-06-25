@@ -11,6 +11,7 @@ python3 -m py_compile \
     fix_album.py \
     menu_bar.py \
     music_common.py \
+    search_providers.py \
     assets/generate-icons.py
 
 echo "Checking shell syntax..."

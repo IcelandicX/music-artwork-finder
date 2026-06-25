@@ -4,7 +4,7 @@ Menu bar app and command-line tools for **Apple Music** on macOS. Search online 
 
 ![Music Fix icon](assets/app-icon-256.png)
 
-Artwork is fetched from the **iTunes Search API** (high-resolution covers) with a **MusicBrainz / Cover Art Archive** fallback. Tags come from **MusicBrainz**.
+Artwork is fetched from the **iTunes Search API**, **MusicBrainz / Cover Art Archive**, **Deezer**, **Discogs**, **DuckDuckGo image search**, and optional **Google Images**, **Last.fm** when API keys are set. Tags come from **MusicBrainz**, enriched with matches discovered on Deezer and Discogs.
 
 ## Requirements
 
@@ -16,7 +16,7 @@ Artwork is fetched from the **iTunes Search API** (high-resolution covers) with 
 
 ### macOS installer (recommended)
 
-**[Download MusicFix-1.0.0.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.0.0/MusicFix-1.0.0.pkg)** — open it and follow the prompts.
+**[Download MusicFix-1.1.0.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.0/MusicFix-1.1.0.pkg)** — open it and follow the prompts.
 
 For other versions, see [GitHub Releases](https://github.com/IcelandicX/music-artwork-finder/releases).
 
@@ -136,11 +136,22 @@ Legacy alias: `find-album-artwork` → same as `music-artwork`.
 
 ## How matching works
 
+- **Deep search** queries multiple services, deduplicates results, and ranks them with the same album/artist scoring rules.
 - **Artist names** are normalized (parenthetical credits like `Fever Ray (Karin Dreijer Andersson)` are stripped for search).
 - **Live albums** are scored carefully so a different venue or city does not win over the correct release.
 - **Artwork** prefers metadata match quality over raw pixel size—a high-res wrong cover loses to a correct lower-res match.
 - **Preview** opens the chosen artwork in Preview.app (or shows a confirmation dialog for tags) before anything is written to Music.
 - After applying artwork, tracks are **re-embedded** so cover art is stored in the files, not only in Music’s library database.
+
+### Optional API keys
+
+Deep search works without configuration. For higher rate limits or extra sources, set environment variables before running the tools:
+
+| Variable | Service |
+| --- | --- |
+| `GOOGLE_API_KEY` + `GOOGLE_CSE_ID` | Google Custom Search (Images) |
+| `DISCOGS_TOKEN` | Discogs |
+| `LASTFM_API_KEY` | Last.fm |
 
 ## Uninstall
 

@@ -17,6 +17,7 @@ APP_FILES=(
     fix_album.py
     menu_bar.py
     music_common.py
+    search_providers.py
     requirements.txt
 )
 

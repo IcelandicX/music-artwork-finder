@@ -514,11 +514,18 @@ def resolve_artwork_candidate(match: ArtworkMatch) -> ArtworkCandidate | None:
     )
 
 
+def gather_artwork_metadata_matches(album: AlbumInfo) -> list[ArtworkMatch]:
+    from search_providers import deep_search_artwork
+
+    matches: list[ArtworkMatch] = []
+    matches.extend(search_itunes(album))
+    matches.extend(search_cover_art_archive(album))
+    matches.extend(deep_search_artwork(album))
+    return sorted(matches, key=lambda match: match.score, reverse=True)
+
+
 def find_highest_quality_artwork(album: AlbumInfo, min_score: float) -> ArtworkCandidate:
-    metadata_matches: list[ArtworkMatch] = []
-    metadata_matches.extend(search_itunes(album))
-    metadata_matches.extend(search_cover_art_archive(album))
-    metadata_matches = sorted(metadata_matches, key=lambda match: match.score, reverse=True)
+    metadata_matches = gather_artwork_metadata_matches(album)
 
     if not metadata_matches:
         raise RuntimeError(f"No artwork found online for “{album.album}” by {album.artist}.")
@@ -527,7 +534,7 @@ def find_highest_quality_artwork(album: AlbumInfo, min_score: float) -> ArtworkC
         match
         for match in metadata_matches
         if match.score >= min_score
-    ][:5]
+    ][:8]
 
     if not top_matches:
         best_meta = metadata_matches[0]
@@ -606,10 +613,7 @@ def download_artwork(url: str, destination: Path) -> None:
 
 
 def list_match_candidates(album: AlbumInfo, min_score: float) -> list[ArtworkCandidate]:
-    metadata_matches: list[ArtworkMatch] = []
-    metadata_matches.extend(search_itunes(album))
-    metadata_matches.extend(search_cover_art_archive(album))
-    metadata_matches = sorted(metadata_matches, key=lambda match: match.score, reverse=True)
+    metadata_matches = gather_artwork_metadata_matches(album)
 
     top_matches = [match for match in metadata_matches if match.score >= min_score][:5]
 
@@ -894,6 +898,24 @@ def artwork_from_release(release_match: ReleaseMatch, album: AlbumInfo) -> Artwo
         app_name=album.app_name,
     )
     for match in search_itunes(probe_album, limit=5):
+        if score_result(album, match.title, match.artist) < 0.45:
+            continue
+        candidate = resolve_artwork_candidate(match)
+        if candidate is not None:
+            return ArtworkCandidate(
+                url=candidate.url,
+                source=candidate.source,
+                title=release_match.title,
+                artist=release_match.artist,
+                width=candidate.width,
+                height=candidate.height,
+                size_bytes=candidate.size_bytes,
+                score=release_match.score,
+            )
+
+    from search_providers import deep_search_artwork
+
+    for match in deep_search_artwork(probe_album):
         if score_result(album, match.title, match.artist) < 0.45:
             continue
         candidate = resolve_artwork_candidate(match)

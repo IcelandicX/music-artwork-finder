@@ -29,10 +29,15 @@ class ReleaseMatch:
     date: str
     score: float
     track_count: int
+    source: str = "MusicBrainz"
 
     @property
     def label(self) -> str:
-        return f"{self.artist} — {self.title} ({self.date or 'unknown date'}, {self.track_count} tracks)"
+        suffix = f" via {self.source}" if self.source != "MusicBrainz" else ""
+        return (
+            f"{self.artist} — {self.title} "
+            f"({self.date or 'unknown date'}, {self.track_count} tracks){suffix}"
+        )
 
 
 def release_artist_name(release: dict) -> str:
@@ -73,8 +78,51 @@ def search_musicbrainz_releases(album: AlbumInfo, limit: int = 8) -> list[Releas
                     date=release.get("date") or "",
                     score=score,
                     track_count=int(release.get("track-count") or 0),
+                    source="MusicBrainz",
                 )
             )
+
+    return sorted(matches, key=lambda match: (match.score, match.track_count), reverse=True)
+
+
+def search_all_releases(album: AlbumInfo, limit: int = 8) -> list[ReleaseMatch]:
+    from search_providers import deep_search_release_hints, lookup_musicbrainz_release
+
+    matches = search_musicbrainz_releases(album, limit=limit)
+    seen_release_ids = {match.release_id for match in matches}
+
+    for hint in deep_search_release_hints(album):
+        if hint.score < 0.4:
+            continue
+
+        release = lookup_musicbrainz_release(
+            hint.artist,
+            hint.title,
+            album,
+            track_count=hint.track_count,
+        )
+        if release is None:
+            continue
+
+        release_id = release.get("id")
+        if not release_id or release_id in seen_release_ids:
+            continue
+        seen_release_ids.add(release_id)
+
+        title = release.get("title", hint.title)
+        artist = release_artist_name(release) or hint.artist
+        score = max(score_result(album, title, artist), hint.score * 0.98)
+        matches.append(
+            ReleaseMatch(
+                release_id=release_id,
+                title=title,
+                artist=artist,
+                date=release.get("date") or hint.date,
+                score=score,
+                track_count=int(release.get("track-count") or hint.track_count or 0),
+                source=hint.source,
+            )
+        )
 
     return sorted(matches, key=lambda match: (match.score, match.track_count), reverse=True)
 
@@ -114,9 +162,9 @@ def choose_release_match(
     pick_interactive: bool = False,
     apply_index: int | None = None,
 ) -> ReleaseMatch:
-    matches = [match for match in search_musicbrainz_releases(album) if match.score >= min_score]
+    matches = [match for match in search_all_releases(album) if match.score >= min_score]
     if not matches:
-        all_matches = search_musicbrainz_releases(album)
+        all_matches = search_all_releases(album)
         if all_matches:
             best = all_matches[0]
             raise RuntimeError(

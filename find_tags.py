@@ -25,7 +25,7 @@ from music_common import (
     confirm_apply,
     get_all_library_albums,
     release_artist_name,
-    search_musicbrainz_releases,
+    search_all_releases,
 )
 
 
@@ -635,7 +635,7 @@ def main(argv: list[str] | None = None) -> int:
             raise RuntimeError("No tracks found to update.")
 
         if args.list_matches:
-            matches = [match for match in search_musicbrainz_releases(album) if match.score >= args.min_score]
+            matches = [match for match in search_all_releases(album) if match.score >= args.min_score]
             if not matches:
                 print("No matches found.")
                 return 1
