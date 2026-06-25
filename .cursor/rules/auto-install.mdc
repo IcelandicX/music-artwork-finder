@@ -1,0 +1,13 @@
+---
+description: Reinstall after project changes
+globs: find_artwork.py,find_tags.py,fix_album.py,music_common.py,menu_bar.py,install.sh,requirements.txt
+alwaysApply: false
+---
+
+After editing `find_artwork.py`, `find_tags.py`, `menu_bar.py`, `install.sh`, or `requirements.txt`, run:
+
+```bash
+./install.sh
+```
+
+This refreshes the `music-artwork` CLI symlink and restarts the menu bar app.
