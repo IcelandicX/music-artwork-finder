@@ -60,7 +60,15 @@ def main(argv: list[str] | None = None) -> int:
     _ = argv
     lines: list[str] = ["Music Fix Doctor", ""]
 
-    for command in ["music-ai", "music-artwork", "music-tags", "music-cache", "music-prefs"]:
+    for command in [
+        "music-ai",
+        "music-analyze",
+        "music-artwork",
+        "music-tags",
+        "music-duplicates",
+        "music-cache",
+        "music-prefs",
+    ]:
         path = command_path(command)
         lines.append(check(command, path != "not found", path))
 

@@ -15,6 +15,16 @@ DEFAULT_PREFS: dict[str, Any] = {
     "confirm_below": 0.60,
     "selection_only": False,
     "cache_ttl_hours": 24,
+    "background_analysis_enabled": True,
+    "background_analysis_interval_hours": 24,
+    "background_analysis_last_run": 0.0,
+    "background_analysis_notifications": True,
+    "background_analysis_quiet_start": 22,
+    "background_analysis_quiet_end": 8,
+    "analysis_auto_resolve_enabled": False,
+    "analysis_auto_resolve_categories": "metadata,renames,artwork",
+    "analysis_auto_resolve_interval_hours": 24,
+    "analysis_auto_resolve_last_run": 0.0,
 }
 
 RUN_MODES = {"auto", "preview", "dry-run"}
@@ -43,6 +53,16 @@ def save_preferences(prefs: dict[str, Any]) -> Path:
     sanitized["confirm_below"] = float(sanitized["confirm_below"])
     sanitized["selection_only"] = bool(sanitized["selection_only"])
     sanitized["cache_ttl_hours"] = int(sanitized["cache_ttl_hours"])
+    sanitized["background_analysis_enabled"] = bool(sanitized["background_analysis_enabled"])
+    sanitized["background_analysis_interval_hours"] = int(sanitized["background_analysis_interval_hours"])
+    sanitized["background_analysis_last_run"] = float(sanitized["background_analysis_last_run"])
+    sanitized["background_analysis_notifications"] = bool(sanitized["background_analysis_notifications"])
+    sanitized["background_analysis_quiet_start"] = int(sanitized["background_analysis_quiet_start"])
+    sanitized["background_analysis_quiet_end"] = int(sanitized["background_analysis_quiet_end"])
+    sanitized["analysis_auto_resolve_enabled"] = bool(sanitized["analysis_auto_resolve_enabled"])
+    sanitized["analysis_auto_resolve_categories"] = str(sanitized["analysis_auto_resolve_categories"])
+    sanitized["analysis_auto_resolve_interval_hours"] = int(sanitized["analysis_auto_resolve_interval_hours"])
+    sanitized["analysis_auto_resolve_last_run"] = float(sanitized["analysis_auto_resolve_last_run"])
     PREFS_PATH.write_text(json.dumps(sanitized, indent=2), encoding="utf-8")
     return PREFS_PATH
 
@@ -59,6 +79,16 @@ def format_preferences(prefs: dict[str, Any] | None = None) -> str:
             f"confirm_below: {prefs['confirm_below']}",
             f"selection_only: {prefs['selection_only']}",
             f"cache_ttl_hours: {prefs['cache_ttl_hours']}",
+            f"background_analysis_enabled: {prefs['background_analysis_enabled']}",
+            f"background_analysis_interval_hours: {prefs['background_analysis_interval_hours']}",
+            f"background_analysis_last_run: {prefs['background_analysis_last_run']}",
+            f"background_analysis_notifications: {prefs['background_analysis_notifications']}",
+            f"background_analysis_quiet_start: {prefs['background_analysis_quiet_start']}",
+            f"background_analysis_quiet_end: {prefs['background_analysis_quiet_end']}",
+            f"analysis_auto_resolve_enabled: {prefs['analysis_auto_resolve_enabled']}",
+            f"analysis_auto_resolve_categories: {prefs['analysis_auto_resolve_categories']}",
+            f"analysis_auto_resolve_interval_hours: {prefs['analysis_auto_resolve_interval_hours']}",
+            f"analysis_auto_resolve_last_run: {prefs['analysis_auto_resolve_last_run']}",
             f"path: {PREFS_PATH}",
         ]
     )

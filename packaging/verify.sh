@@ -9,9 +9,11 @@ python3 -m py_compile \
     find_artwork.py \
     find_tags.py \
     music_ai.py \
+    music_analyze.py \
     music_cache.py \
     music_combine.py \
     music_doctor.py \
+    music_duplicates.py \
     music_prefs.py \
     music_resplit.py \
     fix_album.py \

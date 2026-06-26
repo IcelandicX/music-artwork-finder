@@ -15,9 +15,11 @@ APP_FILES=(
     find_artwork.py
     find_tags.py
     music_ai.py
+    music_analyze.py
     music_cache.py
     music_combine.py
     music_doctor.py
+    music_duplicates.py
     music_prefs.py
     music_resplit.py
     fix_album.py
@@ -52,9 +54,11 @@ ln -sf /usr/local/share/music-artwork-finder/find_artwork.py "$PAYLOAD/usr/local
 ln -sf /usr/local/share/music-artwork-finder/find_artwork.py "$PAYLOAD/usr/local/bin/find-album-artwork"
 ln -sf /usr/local/share/music-artwork-finder/find_tags.py "$PAYLOAD/usr/local/bin/music-tags"
 ln -sf /usr/local/share/music-artwork-finder/music_ai.py "$PAYLOAD/usr/local/bin/music-ai"
+ln -sf /usr/local/share/music-artwork-finder/music_analyze.py "$PAYLOAD/usr/local/bin/music-analyze"
 ln -sf /usr/local/share/music-artwork-finder/music_cache.py "$PAYLOAD/usr/local/bin/music-cache"
 ln -sf /usr/local/share/music-artwork-finder/music_combine.py "$PAYLOAD/usr/local/bin/music-combine"
 ln -sf /usr/local/share/music-artwork-finder/music_doctor.py "$PAYLOAD/usr/local/bin/music-doctor"
+ln -sf /usr/local/share/music-artwork-finder/music_duplicates.py "$PAYLOAD/usr/local/bin/music-duplicates"
 ln -sf /usr/local/share/music-artwork-finder/music_prefs.py "$PAYLOAD/usr/local/bin/music-prefs"
 ln -sf /usr/local/share/music-artwork-finder/music_resplit.py "$PAYLOAD/usr/local/bin/music-resplit"
 ln -sf /usr/local/share/music-artwork-finder/fix_album.py "$PAYLOAD/usr/local/bin/music-fix"

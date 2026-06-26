@@ -48,10 +48,23 @@ def main(argv: list[str] | None = None) -> int:
                     raise RuntimeError(f"run_mode must be one of: {', '.join(sorted(RUN_MODES))}")
             elif args.key == "confirm_below":
                 value = float(args.value)
-            elif args.key == "selection_only":
+            elif args.key in {
+                "selection_only",
+                "background_analysis_enabled",
+                "background_analysis_notifications",
+                "analysis_auto_resolve_enabled",
+            }:
                 value = parse_bool(args.value)
-            elif args.key == "cache_ttl_hours":
+            elif args.key in {
+                "cache_ttl_hours",
+                "background_analysis_interval_hours",
+                "background_analysis_quiet_start",
+                "background_analysis_quiet_end",
+                "analysis_auto_resolve_interval_hours",
+            }:
                 value = int(args.value)
+            elif args.key in {"background_analysis_last_run", "analysis_auto_resolve_last_run"}:
+                value = float(args.value)
             else:
                 value = args.value
             prefs[args.key] = value
