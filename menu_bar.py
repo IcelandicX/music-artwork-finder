@@ -21,6 +21,7 @@ FIND_TAGS = SCRIPT_DIR / "find_tags.py"
 MUSIC_AI = SCRIPT_DIR / "music_ai.py"
 MUSIC_DOCTOR = SCRIPT_DIR / "music_doctor.py"
 MUSIC_PREFS = SCRIPT_DIR / "music_prefs.py"
+MUSIC_COMBINE = SCRIPT_DIR / "music_combine.py"
 FIX_ALBUM = SCRIPT_DIR / "fix_album.py"
 RESOLVE_SPLITS = SCRIPT_DIR / "resolve_splits.py"
 UNDO_LAST = SCRIPT_DIR / "undo_last.py"
@@ -55,6 +56,7 @@ class ArtworkMenuBarApp(rumps.App):
             None,
             "Resolve Split Album(s)",
             "AI Deep Dive Resolve",
+            "Smart Combine Main + Remix Album",
             None,
             "Undo Last Metadata Change",
             "Open Last Fix Report",
@@ -123,6 +125,10 @@ class ArtworkMenuBarApp(rumps.App):
             ["--ai-deep-dive"],
             title="AI deep dive resolve",
         )
+
+    @rumps.clicked("Smart Combine Main + Remix Album")
+    def smart_combine_main_remix(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_COMBINE, [], title="Smart album combine")
 
     @rumps.clicked("Undo Last Metadata Change")
     def undo_last_change(self, _: rumps.MenuItem) -> None:

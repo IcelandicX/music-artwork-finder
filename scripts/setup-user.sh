@@ -24,6 +24,7 @@ music_fix_chmod_scripts() {
         "$project_dir/find_tags.py" \
         "$project_dir/music_ai.py" \
         "$project_dir/music_cache.py" \
+        "$project_dir/music_combine.py" \
         "$project_dir/music_doctor.py" \
         "$project_dir/music_prefs.py" \
         "$project_dir/fix_album.py" \
@@ -42,6 +43,7 @@ music_fix_install_cli_links() {
     ln -sf "$project_dir/find_tags.py" "$bin_dir/music-tags"
     ln -sf "$project_dir/music_ai.py" "$bin_dir/music-ai"
     ln -sf "$project_dir/music_cache.py" "$bin_dir/music-cache"
+    ln -sf "$project_dir/music_combine.py" "$bin_dir/music-combine"
     ln -sf "$project_dir/music_doctor.py" "$bin_dir/music-doctor"
     ln -sf "$project_dir/music_prefs.py" "$bin_dir/music-prefs"
     ln -sf "$project_dir/fix_album.py" "$bin_dir/music-fix"
