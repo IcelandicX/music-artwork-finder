@@ -54,14 +54,58 @@ cat > "$EXECUTABLE" <<EOF
 set -euo pipefail
 
 PROJECT_DIR="$RUNTIME_PROJECT_DIR"
-PYTHON="\${MUSIC_FIX_PYTHON:-}"
-if [[ -z "\$PYTHON" ]]; then
-    PYTHON="\$(command -v python3 || true)"
-fi
-if [[ -z "\$PYTHON" ]]; then
-    PYTHON="/usr/bin/python3"
+LOG_DIR="\$HOME/Library/Logs"
+LOG_FILE="\$LOG_DIR/Music Fix.log"
+mkdir -p "\$LOG_DIR"
+exec >>"\$LOG_FILE" 2>&1
+
+echo "---- Music Fix launch \$(date) ----"
+export PATH="/Library/Frameworks/Python.framework/Versions/Current/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:\${PATH:-}"
+
+if [[ ! -f "\$PROJECT_DIR/menu_bar.py" && -f "/usr/local/share/music-artwork-finder/menu_bar.py" ]]; then
+    PROJECT_DIR="/usr/local/share/music-artwork-finder"
 fi
 
+if [[ ! -f "\$PROJECT_DIR/menu_bar.py" ]]; then
+    echo "Missing menu_bar.py at \$PROJECT_DIR/menu_bar.py"
+    exit 1
+fi
+
+python_can_run_music_fix() {
+    local candidate="\$1"
+    [[ -x "\$candidate" ]] || return 1
+    "\$candidate" -c 'import rumps' >/dev/null 2>&1
+}
+
+PYTHON="\${MUSIC_FIX_PYTHON:-}"
+if [[ -n "\$PYTHON" ]] && ! python_can_run_music_fix "\$PYTHON"; then
+    echo "Configured MUSIC_FIX_PYTHON cannot import rumps: \$PYTHON"
+    PYTHON=""
+fi
+
+if [[ -z "\$PYTHON" ]]; then
+    for candidate in \
+        "/Library/Frameworks/Python.framework/Versions/Current/bin/python3" \
+        "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3" \
+        "/opt/homebrew/bin/python3" \
+        "/usr/local/bin/python3" \
+        "\$(command -v python3 || true)" \
+        "/usr/bin/python3"; do
+        if python_can_run_music_fix "\$candidate"; then
+            PYTHON="\$candidate"
+            break
+        fi
+    done
+fi
+
+if [[ -z "\$PYTHON" ]]; then
+    echo "No Python interpreter with rumps installed was found."
+    echo "Run ./install.sh or python3 -m pip install --user -r \$PROJECT_DIR/requirements.txt"
+    exit 1
+fi
+
+echo "Using Python: \$PYTHON"
+echo "Using project: \$PROJECT_DIR"
 exec "\$PYTHON" "\$PROJECT_DIR/menu_bar.py"
 EOF
 
