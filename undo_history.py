@@ -33,7 +33,7 @@ def _new_snapshot_path() -> Path:
     return UNDO_DIR / f"{timestamp}.json"
 
 
-def save_undo_snapshot(changes: list[Any], action: str) -> Path | None:
+def save_undo_snapshot(changes: list[Any], action: str, group_id: str | None = None) -> Path | None:
     """Persist previous metadata for changes about to be applied."""
     if not changes:
         return None
@@ -45,6 +45,8 @@ def save_undo_snapshot(changes: list[Any], action: str) -> Path | None:
         "kind": "metadata",
         "tracks": [_track_snapshot_payload(change.before) for change in changes],
     }
+    if group_id:
+        payload["group_id"] = group_id
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return path
 
@@ -53,6 +55,7 @@ def save_artwork_undo_snapshot(
     tracks: list[dict[str, Any]],
     artwork_dir: Path,
     action: str = "artwork update",
+    group_id: str | None = None,
 ) -> Path | None:
     if not tracks:
         shutil.rmtree(artwork_dir, ignore_errors=True)
@@ -71,8 +74,24 @@ def save_artwork_undo_snapshot(
         "artwork_dir": str(snapshot_dir),
         "tracks": tracks,
     }
+    if group_id:
+        payload["group_id"] = group_id
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return path
+
+
+def undo_snapshots_for_group(group_id: str) -> list[Path]:
+    snapshots: list[Path] = []
+    for path in UNDO_DIR.glob("*.json"):
+        if path.name.endswith(".undone.json"):
+            continue
+        try:
+            payload = load_undo_snapshot(path)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if payload.get("group_id") == group_id:
+            snapshots.append(path)
+    return sorted(snapshots)
 
 
 def latest_undo_snapshot() -> Path | None:

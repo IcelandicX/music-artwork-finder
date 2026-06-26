@@ -9,6 +9,7 @@ python3 -m py_compile \
     find_artwork.py \
     find_tags.py \
     music_ai.py \
+    music_cache.py \
     fix_album.py \
     menu_bar.py \
     music_common.py \

@@ -939,7 +939,11 @@ end tell
     save_artwork_undo_snapshot(tracks, undo_dir)
 
 
-def save_artwork_undo_for_track_ids(app_name: str, track_ids: list[int]) -> None:
+def save_artwork_undo_for_track_ids(
+    app_name: str,
+    track_ids: list[int],
+    group_id: str | None = None,
+) -> None:
     if not track_ids:
         return
 
@@ -995,7 +999,7 @@ end tell
                 "artwork_path": artwork_path,
             }
         )
-    save_artwork_undo_snapshot(tracks, undo_dir)
+    save_artwork_undo_snapshot(tracks, undo_dir, group_id=group_id)
 
 
 def get_albums_missing_artwork(app_name: str) -> list[AlbumInfo]:

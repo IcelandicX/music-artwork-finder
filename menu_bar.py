@@ -22,6 +22,7 @@ MUSIC_AI = SCRIPT_DIR / "music_ai.py"
 FIX_ALBUM = SCRIPT_DIR / "fix_album.py"
 RESOLVE_SPLITS = SCRIPT_DIR / "resolve_splits.py"
 UNDO_LAST = SCRIPT_DIR / "undo_last.py"
+MUSIC_CACHE = SCRIPT_DIR / "music_cache.py"
 MENUBAR_ICON = SCRIPT_DIR / "assets" / "menubar-template@2x.png"
 
 
@@ -52,6 +53,7 @@ class ArtworkMenuBarApp(rumps.App):
             "AI Deep Dive Resolve",
             None,
             "Undo Last Metadata Change",
+            "Clear AI Search Cache",
             None,
             "Fix Missing Artwork",
             "Fix Tags in Library",
@@ -118,6 +120,17 @@ class ArtworkMenuBarApp(rumps.App):
         if response == 1:
             self._run_script(UNDO_LAST, [], title="Music Fix undo")
 
+    @rumps.clicked("Clear AI Search Cache")
+    def clear_ai_search_cache(self, _: rumps.MenuItem) -> None:
+        response = rumps.alert(
+            title="Clear AI Search Cache",
+            message="Remove cached release, artwork, and tracklist search results?",
+            ok="Clear Cache",
+            cancel="Cancel",
+        )
+        if response == 1:
+            self._run_script(MUSIC_CACHE, ["clear"], title="Music Fix cache")
+
     @rumps.clicked("Fix Missing Artwork")
     def fix_missing(self, _: rumps.MenuItem) -> None:
         response = rumps.alert(
@@ -166,7 +179,7 @@ class ArtworkMenuBarApp(rumps.App):
                 "Select album/albums or songs in Music, then choose an action.\n\n"
                 "Fix Tags and Artwork can auto-resolve split album(s) with AI-style "
                 "deep evidence scoring, uses one MusicBrainz match for both steps, "
-                "auto-applies changes, saves undo history, and re-embeds artwork into files."
+                "auto-applies confident changes, saves undo history, and re-embeds artwork into files."
             ),
             ok="OK",
         )

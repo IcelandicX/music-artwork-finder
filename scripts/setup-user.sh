@@ -23,6 +23,7 @@ music_fix_chmod_scripts() {
         "$project_dir/find_artwork.py" \
         "$project_dir/find_tags.py" \
         "$project_dir/music_ai.py" \
+        "$project_dir/music_cache.py" \
         "$project_dir/fix_album.py" \
         "$project_dir/resolve_splits.py" \
         "$project_dir/undo_last.py" \
@@ -38,6 +39,7 @@ music_fix_install_cli_links() {
     ln -sf "$project_dir/find_artwork.py" "$bin_dir/find-album-artwork"
     ln -sf "$project_dir/find_tags.py" "$bin_dir/music-tags"
     ln -sf "$project_dir/music_ai.py" "$bin_dir/music-ai"
+    ln -sf "$project_dir/music_cache.py" "$bin_dir/music-cache"
     ln -sf "$project_dir/fix_album.py" "$bin_dir/music-fix"
     ln -sf "$project_dir/resolve_splits.py" "$bin_dir/music-splits"
     ln -sf "$project_dir/undo_last.py" "$bin_dir/music-undo"

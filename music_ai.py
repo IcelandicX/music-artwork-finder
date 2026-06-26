@@ -43,6 +43,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Minimum album match score required (default: 0.45).",
     )
     parser.add_argument(
+        "--confirm-below",
+        type=float,
+        default=0.60,
+        help="Ask before applying matches below this confidence score (default: 0.60).",
+    )
+    parser.add_argument(
         "--pick",
         action="store_true",
         help="Choose which online album match to use after AI split resolution.",
@@ -59,6 +65,8 @@ def main(argv: list[str] | None = None) -> int:
         "--ai-deep-dive",
         "--min-score",
         str(args.min_score),
+        "--confirm-below",
+        str(args.confirm_below),
     ]
     if args.preview and not args.dry_run:
         fix_args.append("--preview")

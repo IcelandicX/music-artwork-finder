@@ -405,12 +405,13 @@ def apply_tag_changes(
     changes: list[TagChange],
     save_undo: bool = True,
     undo_action: str = "metadata update",
+    undo_group_id: str | None = None,
 ) -> int:
     if not changes:
         return 0
 
     if save_undo:
-        save_undo_snapshot(changes, undo_action)
+        save_undo_snapshot(changes, undo_action, group_id=undo_group_id)
 
     records: list[str] = []
     for change in changes:
@@ -486,6 +487,7 @@ def process_tags(
     release_match: ReleaseMatch | None = None,
     preview: bool = False,
     skip_if_correct: bool = False,
+    undo_group_id: str | None = None,
 ) -> tuple[int, ReleaseMatch, list[TagChange]]:
     if release_match is None:
         release = choose_release_match(
@@ -527,7 +529,7 @@ def process_tags(
         if not confirm_apply("Preview tag changes", "\n".join(preview_lines)):
             raise RuntimeError("Tag update cancelled.")
 
-    updated = apply_tag_changes(app_name, changes)
+    updated = apply_tag_changes(app_name, changes, undo_group_id=undo_group_id)
     return updated, release, changes
 
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import sys
 import tempfile
+import uuid
 from pathlib import Path
 
 from find_artwork import (
@@ -125,6 +126,7 @@ def process_one_album(
     args: argparse.Namespace,
     fix_tags: bool,
     fix_artwork: bool,
+    undo_group_id: str | None = None,
 ) -> str:
     release = choose_release_match(
         album,
@@ -163,6 +165,21 @@ def process_one_album(
     if args.dry_run:
         return build_preview_message(release.label, tag_changes, artwork_label)
 
+    if not args.preview and not args.pick:
+        weak_reasons: list[str] = []
+        if release.score < args.confirm_below:
+            weak_reasons.append(f"release score {release.score:.2f}")
+        if artwork_candidate is not None and artwork_candidate.score < args.confirm_below:
+            weak_reasons.append(f"artwork score {artwork_candidate.score:.2f}")
+        if weak_reasons:
+            message = (
+                build_preview_message(release.label, tag_changes, artwork_label)
+                + "\n\nThis match is below the auto-apply confidence threshold: "
+                + ", ".join(weak_reasons)
+            )
+            if not confirm_apply("Confirm low-confidence album fix", message):
+                raise RuntimeError("Low-confidence album fix cancelled.")
+
     preview_image: Path | None = None
     temp_dir_ctx = None
     if args.preview:
@@ -189,6 +206,7 @@ def process_one_album(
             dry_run=False,
             release_match=release,
             preview=False,
+            undo_group_id=undo_group_id,
         )
 
     if fix_artwork and artwork_candidate is not None:
@@ -196,7 +214,7 @@ def process_one_album(
             image_path = Path(temp_dir) / "artwork.jpg"
             download_artwork(artwork_candidate.url, image_path)
             track_ids = [track.track_id for track in local_tracks]
-            save_artwork_undo_for_track_ids(app_name, track_ids)
+            save_artwork_undo_for_track_ids(app_name, track_ids, group_id=undo_group_id)
             updated_artwork = apply_artwork_to_track_ids(app_name, image_path, track_ids)
 
     if temp_dir_ctx is not None:
@@ -269,6 +287,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Use deeper song-title and release-evidence scoring when resolving split album(s).",
     )
+    parser.add_argument(
+        "--confirm-below",
+        type=float,
+        default=0.60,
+        help="Ask before applying matches below this confidence score (default: 0.60).",
+    )
     args = parser.parse_args(argv)
 
     fix_tags = not args.artwork_only
@@ -291,9 +315,13 @@ def main(argv: list[str] | None = None) -> int:
 
         summaries: list[str] = []
         failures: list[str] = []
-        for album, local_tracks in jobs:
+        undo_group_id = f"all-in-one-{uuid.uuid4()}" if not args.dry_run else None
+        for index, (album, local_tracks) in enumerate(jobs, start=1):
             if not local_tracks:
                 continue
+            progress = f"[{index}/{len(jobs)}] Processing {album.artist} — {album.album}"
+            print(progress)
+            sys.stdout.flush()
             try:
                 summaries.append(
                     process_one_album(
@@ -303,6 +331,7 @@ def main(argv: list[str] | None = None) -> int:
                         args,
                         fix_tags=fix_tags,
                         fix_artwork=fix_artwork,
+                        undo_group_id=undo_group_id,
                     )
                 )
             except Exception as exc:  # noqa: BLE001 - report per album

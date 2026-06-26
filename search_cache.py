@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from pathlib import Path
 from typing import Any
@@ -39,3 +40,20 @@ def save_cache(namespace: str, key: str, value: Any) -> None:
         "value": value,
     }
     path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+
+def clear_cache(namespace: str | None = None) -> int:
+    """Remove cached search files and return the number of files deleted."""
+    target = CACHE_DIR / namespace if namespace else CACHE_DIR
+    if not target.exists():
+        return 0
+
+    deleted = sum(1 for path in target.rglob("*.json") if path.is_file())
+    shutil.rmtree(target)
+    return deleted
+
+
+def cache_file_count() -> int:
+    if not CACHE_DIR.exists():
+        return 0
+    return sum(1 for path in CACHE_DIR.rglob("*.json") if path.is_file())
