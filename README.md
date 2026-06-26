@@ -16,13 +16,14 @@ Artwork is fetched from the **iTunes Search API**, **MusicBrainz / Cover Art Arc
 
 ### macOS installer (recommended)
 
-**[Download MusicFix-1.1.9.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.9/MusicFix-1.1.9.pkg)** — open it and follow the prompts.
+**[Download MusicFix-1.1.10.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.10/MusicFix-1.1.10.pkg)** — open it and follow the prompts.
 
 For other versions, see [GitHub Releases](https://github.com/IcelandicX/music-artwork-finder/releases).
 
 The installer:
 
 - Installs files to `/usr/local/share/music-artwork-finder`
+- Installs **Music Fix.app** to `/Applications`
 - Adds CLI commands to `/usr/local/bin` (`music-ai`, `music-analyze`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-combine`, `music-resplit`, `music-duplicates`, `music-undo`, `music-cache`, `music-prefs`, `music-doctor`)
 - Installs Python dependencies for your user account (`rumps` for the menu bar app)
 - Registers a **LaunchAgent** so the **Music Fix** menu bar app starts at login
@@ -47,6 +48,7 @@ cd music-artwork-finder
 The source installer:
 
 - Adds CLI commands to `~/.local/bin` (`music-ai`, `music-analyze`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-combine`, `music-resplit`, `music-duplicates`, `music-undo`, `music-cache`, `music-prefs`, `music-doctor`)
+- Adds **Music Fix.app** to `~/Applications`
 - Installs Python dependencies (`rumps` for the menu bar app)
 - Registers a **LaunchAgent** so the **Music Fix** menu bar app starts at login
 
@@ -65,7 +67,7 @@ Music must be **running** when you use these tools. Select album/albums or songs
 
 ## Menu bar app
 
-After install, look for **Music Fix** in the menu bar (near the clock). If it is missing:
+After install, you can open **Music Fix.app** from `/Applications` (or `~/Applications` for source installs). It runs as a menu bar app, so look for **Music Fix** near the clock. If it is missing:
 
 ```bash
 launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-finder.plist
@@ -355,6 +357,7 @@ Deep search works without configuration. For higher rate limits or extra sources
 ```bash
 launchctl bootout "gui/$(id -u)/com.music-artwork-finder" 2>/dev/null || true
 rm -f ~/Library/LaunchAgents/com.music-artwork-finder.plist
+rm -rf "/Applications/Music Fix.app" ~/Applications/"Music Fix.app"
 rm -f /usr/local/bin/music-artwork /usr/local/bin/find-album-artwork
 rm -f /usr/local/bin/music-tags /usr/local/bin/music-fix
 rm -f /usr/local/bin/music-ai /usr/local/bin/music-analyze /usr/local/bin/music-splits /usr/local/bin/music-combine /usr/local/bin/music-resplit /usr/local/bin/music-duplicates /usr/local/bin/music-undo /usr/local/bin/music-cache

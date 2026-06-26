@@ -38,12 +38,14 @@ APP_FILES=(
 rm -rf "$BUILD_DIR" "$DIST_DIR"
 mkdir -p "$PAYLOAD/usr/local/share/music-artwork-finder/scripts"
 mkdir -p "$PAYLOAD/usr/local/bin"
+mkdir -p "$PAYLOAD/Applications"
 mkdir -p "$DIST_DIR"
 
 for file in "${APP_FILES[@]}"; do
     cp "$ROOT/$file" "$PAYLOAD/usr/local/share/music-artwork-finder/"
 done
 cp "$ROOT/scripts/setup-user.sh" "$PAYLOAD/usr/local/share/music-artwork-finder/scripts/"
+cp "$ROOT/scripts/build-app.sh" "$PAYLOAD/usr/local/share/music-artwork-finder/scripts/"
 mkdir -p "$PAYLOAD/usr/local/share/music-artwork-finder/assets"
 rsync -a \
     --exclude '__pycache__/' \
@@ -67,7 +69,13 @@ ln -sf /usr/local/share/music-artwork-finder/undo_last.py "$PAYLOAD/usr/local/bi
 
 chmod +x "$ROOT/packaging/scripts/preinstall" "$ROOT/packaging/scripts/postinstall"
 chmod +x "$PAYLOAD/usr/local/share/music-artwork-finder/scripts/setup-user.sh"
+chmod +x "$PAYLOAD/usr/local/share/music-artwork-finder/scripts/build-app.sh"
 chmod +x "$PAYLOAD/usr/local/share/music-artwork-finder/"*.py
+
+"$ROOT/scripts/build-app.sh" \
+    "$ROOT" \
+    "$PAYLOAD/Applications/Music Fix.app" \
+    /usr/local/share/music-artwork-finder
 
 sed "s/@VERSION@/$VERSION/g" "$ROOT/packaging/distribution.xml.in" > "$DISTRIBUTION_XML"
 

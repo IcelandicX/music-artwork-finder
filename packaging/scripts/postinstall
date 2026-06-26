@@ -9,7 +9,7 @@ if [[ ! -f "$SETUP_SCRIPT" ]]; then
     exit 1
 fi
 
-chmod +x "$SETUP_SCRIPT" "$PROJECT_DIR"/*.py
+chmod +x "$SETUP_SCRIPT" "$PROJECT_DIR/scripts/build-app.sh" "$PROJECT_DIR"/*.py
 
 CONSOLE_USER=$(stat -f%Su /dev/console 2>/dev/null || true)
 if [[ -z "$CONSOLE_USER" || "$CONSOLE_USER" == "root" ]]; then

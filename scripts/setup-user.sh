@@ -91,9 +91,36 @@ music_fix_write_launch_agent() {
     local project_dir="$1"
     local home="${HOME:?HOME is required}"
     local plist_path="$home/Library/LaunchAgents/${MUSIC_FIX_LABEL}.plist"
+    local app_executable=""
+
+    if [[ -x "/Applications/Music Fix.app/Contents/MacOS/Music Fix" ]]; then
+        app_executable="/Applications/Music Fix.app/Contents/MacOS/Music Fix"
+    elif [[ -x "$home/Applications/Music Fix.app/Contents/MacOS/Music Fix" ]]; then
+        app_executable="$home/Applications/Music Fix.app/Contents/MacOS/Music Fix"
+    fi
 
     mkdir -p "$home/Library/LaunchAgents"
-    cat > "$plist_path" <<EOF
+    if [[ -n "$app_executable" ]]; then
+        cat > "$plist_path" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${MUSIC_FIX_LABEL}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${app_executable}</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
+EOF
+    else
+        cat > "$plist_path" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -112,6 +139,7 @@ music_fix_write_launch_agent() {
 </dict>
 </plist>
 EOF
+    fi
 }
 
 music_fix_start_launch_agent() {
@@ -130,6 +158,10 @@ music_fix_setup() {
     if [[ -n "$bin_dir" ]]; then
         music_fix_install_cli_links "$project_dir" "$bin_dir"
         music_fix_ensure_path "$bin_dir"
+    fi
+    if [[ -x "$project_dir/scripts/build-app.sh" ]]; then
+        mkdir -p "$HOME/Applications"
+        "$project_dir/scripts/build-app.sh" "$project_dir" "$HOME/Applications/Music Fix.app"
     fi
     music_fix_install_python_deps "$project_dir"
     music_fix_write_launch_agent "$project_dir"

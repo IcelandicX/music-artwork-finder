@@ -9,6 +9,7 @@ music_fix_setup "$PROJECT_DIR" "$HOME/.local/bin"
 
 echo
 echo "Installed."
+echo "  App: ~/Applications/Music Fix.app"
 echo "  CLI: music-ai, music-analyze, music-artwork, music-tags, music-fix, music-splits, music-combine, music-resplit, music-duplicates, music-undo, music-cache, music-prefs, music-doctor"
 echo "  Menu bar app: started (look for “Music Fix” near the clock)"
 echo

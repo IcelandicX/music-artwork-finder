@@ -30,6 +30,7 @@ python3 -m py_compile \
 
 echo "Checking shell syntax..."
 bash -n install.sh
+bash -n scripts/build-app.sh
 bash -n scripts/setup-user.sh
 bash -n scripts/tag-release.sh
 bash -n packaging/build-pkg.sh
@@ -43,6 +44,7 @@ required=(
     requirements.txt
     assets/menubar-template@2x.png
     assets/MusicFix.icns
+    scripts/build-app.sh
     packaging/distribution.xml.in
 )
 for file in "${required[@]}"; do
@@ -58,6 +60,11 @@ echo "Building installer package..."
 OUTPUT_PKG="dist/MusicFix-$(tr -d '[:space:]' < VERSION).pkg"
 if [[ ! -f "$OUTPUT_PKG" ]]; then
     echo "Expected package was not created: $OUTPUT_PKG" >&2
+    exit 1
+fi
+
+if [[ ! -x "build/pkg/payload/Applications/Music Fix.app/Contents/MacOS/Music Fix" ]]; then
+    echo "Expected app bundle executable was not created." >&2
     exit 1
 fi
 
