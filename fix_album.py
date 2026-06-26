@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 
 from find_artwork import (
+    AlbumInfo,
     artwork_from_release,
     download_artwork,
     get_selected_album,
