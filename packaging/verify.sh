@@ -13,6 +13,7 @@ python3 -m py_compile \
     music_combine.py \
     music_doctor.py \
     music_prefs.py \
+    music_resplit.py \
     fix_album.py \
     menu_bar.py \
     music_common.py \

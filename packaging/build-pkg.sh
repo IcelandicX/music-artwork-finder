@@ -19,6 +19,7 @@ APP_FILES=(
     music_combine.py
     music_doctor.py
     music_prefs.py
+    music_resplit.py
     fix_album.py
     menu_bar.py
     music_common.py
@@ -55,6 +56,7 @@ ln -sf /usr/local/share/music-artwork-finder/music_cache.py "$PAYLOAD/usr/local/
 ln -sf /usr/local/share/music-artwork-finder/music_combine.py "$PAYLOAD/usr/local/bin/music-combine"
 ln -sf /usr/local/share/music-artwork-finder/music_doctor.py "$PAYLOAD/usr/local/bin/music-doctor"
 ln -sf /usr/local/share/music-artwork-finder/music_prefs.py "$PAYLOAD/usr/local/bin/music-prefs"
+ln -sf /usr/local/share/music-artwork-finder/music_resplit.py "$PAYLOAD/usr/local/bin/music-resplit"
 ln -sf /usr/local/share/music-artwork-finder/fix_album.py "$PAYLOAD/usr/local/bin/music-fix"
 ln -sf /usr/local/share/music-artwork-finder/resolve_splits.py "$PAYLOAD/usr/local/bin/music-splits"
 ln -sf /usr/local/share/music-artwork-finder/undo_last.py "$PAYLOAD/usr/local/bin/music-undo"

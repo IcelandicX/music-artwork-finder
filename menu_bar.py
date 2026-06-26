@@ -22,6 +22,7 @@ MUSIC_AI = SCRIPT_DIR / "music_ai.py"
 MUSIC_DOCTOR = SCRIPT_DIR / "music_doctor.py"
 MUSIC_PREFS = SCRIPT_DIR / "music_prefs.py"
 MUSIC_COMBINE = SCRIPT_DIR / "music_combine.py"
+MUSIC_RESPLIT = SCRIPT_DIR / "music_resplit.py"
 FIX_ALBUM = SCRIPT_DIR / "fix_album.py"
 RESOLVE_SPLITS = SCRIPT_DIR / "resolve_splits.py"
 UNDO_LAST = SCRIPT_DIR / "undo_last.py"
@@ -59,6 +60,7 @@ class ArtworkMenuBarApp(rumps.App):
             "Smart Combine Main + Remix Album",
             "Smart Combine: Choose Main...",
             "Smart Combine with Main Artwork",
+            "Analyze and Resplit Album(s)",
             None,
             "Undo Last Metadata Change",
             "Open Last Fix Report",
@@ -139,6 +141,10 @@ class ArtworkMenuBarApp(rumps.App):
     @rumps.clicked("Smart Combine with Main Artwork")
     def smart_combine_with_artwork(self, _: rumps.MenuItem) -> None:
         self._run_script(MUSIC_COMBINE, ["--inherit-artwork"], title="Smart album combine")
+
+    @rumps.clicked("Analyze and Resplit Album(s)")
+    def analyze_and_resplit(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_RESPLIT, [], title="Album resplit")
 
     @rumps.clicked("Undo Last Metadata Change")
     def undo_last_change(self, _: rumps.MenuItem) -> None:

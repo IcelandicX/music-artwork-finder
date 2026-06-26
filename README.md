@@ -16,14 +16,14 @@ Artwork is fetched from the **iTunes Search API**, **MusicBrainz / Cover Art Arc
 
 ### macOS installer (recommended)
 
-**[Download MusicFix-1.1.4.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.4/MusicFix-1.1.4.pkg)** — open it and follow the prompts.
+**[Download MusicFix-1.1.5.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.5/MusicFix-1.1.5.pkg)** — open it and follow the prompts.
 
 For other versions, see [GitHub Releases](https://github.com/IcelandicX/music-artwork-finder/releases).
 
 The installer:
 
 - Installs files to `/usr/local/share/music-artwork-finder`
-- Adds CLI commands to `/usr/local/bin` (`music-ai`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-combine`, `music-undo`, `music-cache`, `music-prefs`, `music-doctor`)
+- Adds CLI commands to `/usr/local/bin` (`music-ai`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-combine`, `music-resplit`, `music-undo`, `music-cache`, `music-prefs`, `music-doctor`)
 - Installs Python dependencies for your user account (`rumps` for the menu bar app)
 - Registers a **LaunchAgent** so the **Music Fix** menu bar app starts at login
 
@@ -46,7 +46,7 @@ cd music-artwork-finder
 
 The source installer:
 
-- Adds CLI commands to `~/.local/bin` (`music-ai`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-combine`, `music-undo`, `music-cache`, `music-prefs`, `music-doctor`)
+- Adds CLI commands to `~/.local/bin` (`music-ai`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-combine`, `music-resplit`, `music-undo`, `music-cache`, `music-prefs`, `music-doctor`)
 - Installs Python dependencies (`rumps` for the menu bar app)
 - Registers a **LaunchAgent** so the **Music Fix** menu bar app starts at login
 
@@ -88,6 +88,7 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-find
 | **Smart Combine Main + Remix Album** | Combine selected related albums into one multi-disc album, e.g. main album as disc 1 and remixes as disc 2 |
 | **Smart Combine: Choose Main...** | Pick which selected album becomes disc 1 before combining |
 | **Smart Combine with Main Artwork** | Combine and copy the main album artwork to moved remix/bonus tracks |
+| **Analyze and Resplit Album(s)** | Analyze combined albums and split disc 2+ or remix-looking tracks back into `Remixes`/bonus albums |
 | **Undo Last Metadata Change** | Restore the previous tags or artwork; grouped all-in-one runs undo together |
 | **Open Last Fix Report** | Open the latest text report from an all-in-one run |
 | **Clear AI Search Cache** | Remove cached release, artwork, and tracklist search results |
@@ -196,6 +197,22 @@ music-combine --renumber   # optional: renumber each disc from 1
 
 Smart Combine warns about duplicate-looking track titles before applying and writes the latest combine report to `~/.music-artwork-finder/reports/latest-smart-combine.txt`.
 
+### `music-resplit`
+
+Analyze selected combined album(s) and split remix/bonus-looking tracks back into separate albums. This is useful after combining `Fever Ray` + `Remixes` and later deciding that the remix tracks should become their own `Remixes` album again.
+
+```bash
+music-resplit              # preview first, then confirm
+music-resplit --dry-run
+music-resplit --yes
+music-resplit --remix-album "Remixes"
+music-resplit --bonus-album "Bonus Tracks"
+music-resplit --disc-groups
+music-resplit --renumber
+```
+
+Reports are written to `~/.music-artwork-finder/reports/latest-resplit.txt`.
+
 ### `music-undo`
 
 Undo the last Music Fix metadata or artwork change. This restores tags saved before `music-tags`, `music-fix`, or `music-splits` wrote changes, and restores previous artwork saved before cover art updates.
@@ -246,6 +263,7 @@ Legacy alias: `find-album-artwork` → same as `music-artwork`.
 - **Deep search** queries multiple services, deduplicates results, ranks them with the same album/artist scoring rules, and caches release/artwork/tracklist results for faster repeat runs.
 - **Split album resolve** finds song(s) tagged under different album or artist names that belong together, looks up the correct release online, and merges them under one album.
 - **Smart Combine** turns related selected albums into one multi-disc album while preserving track titles and artists, warning about duplicate-looking titles and optionally copying the main album artwork.
+- **Analyze and Resplit** detects remix, bonus, demo, and rarity tracks inside combined albums and previews moving them back into separate albums; `--disc-groups` can force full disc 2+ splits.
 - **Fast AI mode** only fetches related album candidates around the current selection instead of scanning every track in the library.
 - **Low-confidence safety** asks for confirmation before auto-applying weaker all-in-one matches.
 - **Preferences** store saved defaults in `~/.music-artwork-finder/preferences.json`.
@@ -276,12 +294,12 @@ launchctl bootout "gui/$(id -u)/com.music-artwork-finder" 2>/dev/null || true
 rm -f ~/Library/LaunchAgents/com.music-artwork-finder.plist
 rm -f /usr/local/bin/music-artwork /usr/local/bin/find-album-artwork
 rm -f /usr/local/bin/music-tags /usr/local/bin/music-fix
-rm -f /usr/local/bin/music-ai /usr/local/bin/music-splits /usr/local/bin/music-combine /usr/local/bin/music-undo /usr/local/bin/music-cache
+rm -f /usr/local/bin/music-ai /usr/local/bin/music-splits /usr/local/bin/music-combine /usr/local/bin/music-resplit /usr/local/bin/music-undo /usr/local/bin/music-cache
 rm -f /usr/local/bin/music-prefs /usr/local/bin/music-doctor
 sudo rm -rf /usr/local/share/music-artwork-finder
 rm -f ~/.local/bin/music-artwork ~/.local/bin/find-album-artwork
 rm -f ~/.local/bin/music-tags ~/.local/bin/music-fix
-rm -f ~/.local/bin/music-ai ~/.local/bin/music-splits ~/.local/bin/music-combine ~/.local/bin/music-undo ~/.local/bin/music-cache
+rm -f ~/.local/bin/music-ai ~/.local/bin/music-splits ~/.local/bin/music-combine ~/.local/bin/music-resplit ~/.local/bin/music-undo ~/.local/bin/music-cache
 rm -f ~/.local/bin/music-prefs ~/.local/bin/music-doctor
 ```
 

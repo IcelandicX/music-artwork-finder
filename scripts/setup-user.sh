@@ -27,6 +27,7 @@ music_fix_chmod_scripts() {
         "$project_dir/music_combine.py" \
         "$project_dir/music_doctor.py" \
         "$project_dir/music_prefs.py" \
+        "$project_dir/music_resplit.py" \
         "$project_dir/fix_album.py" \
         "$project_dir/resolve_splits.py" \
         "$project_dir/undo_last.py" \
@@ -46,6 +47,7 @@ music_fix_install_cli_links() {
     ln -sf "$project_dir/music_combine.py" "$bin_dir/music-combine"
     ln -sf "$project_dir/music_doctor.py" "$bin_dir/music-doctor"
     ln -sf "$project_dir/music_prefs.py" "$bin_dir/music-prefs"
+    ln -sf "$project_dir/music_resplit.py" "$bin_dir/music-resplit"
     ln -sf "$project_dir/fix_album.py" "$bin_dir/music-fix"
     ln -sf "$project_dir/resolve_splits.py" "$bin_dir/music-splits"
     ln -sf "$project_dir/undo_last.py" "$bin_dir/music-undo"
