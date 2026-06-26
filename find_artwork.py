@@ -94,7 +94,12 @@ tell application "{app_name}"
         end try
     end if
     if (count of selectedItems) is 0 then
-        error "No album(s) or song(s) selected. Select album/albums or songs in Music, then run this again."
+        try
+            set selectedItems to {{current track}}
+        end try
+    end if
+    if (count of selectedItems) is 0 then
+        error "No album(s) or song(s) selected. Select album/albums or songs in Music, or start playing a song, then run this again."
     end if
 
     set theItem to item 1 of selectedItems
@@ -802,6 +807,39 @@ end tell
     return int(updated)
 
 
+def apply_artwork_to_track_ids(
+    app_name: str,
+    image_path: Path,
+    track_ids: list[int],
+) -> int:
+    if not track_ids:
+        return 0
+
+    image_posix = str(image_path.resolve())
+    id_list = ", ".join(str(track_id) for track_id in track_ids)
+    script = f'''
+set imageFile to POSIX file "{image_posix}"
+set artworkData to read imageFile as picture
+
+tell application "{app_name}"
+    set updatedCount to 0
+    repeat with trackId in {{{id_list}}}
+        try
+            set aTrack to (first track of library playlist 1 whose id is trackId)
+            try
+                set data of artwork 1 of aTrack to artworkData
+            on error
+                set data of artwork of aTrack to artworkData
+            end try
+            set updatedCount to updatedCount + 1
+        end try
+    end repeat
+    return updatedCount as string
+end tell
+'''
+    return int(run_osascript(script))
+
+
 def save_artwork_undo(
     app_name: str,
     entire_album: bool,
@@ -868,6 +906,65 @@ tell application "{app_name}"
                     set lineText to trackId & "{FIELD_SEP}" & (name of aTrack) & "{FIELD_SEP}" & (artist of aTrack) & "{FIELD_SEP}" & (album of aTrack) & "{FIELD_SEP}" & albumArtistName & "{FIELD_SEP}" & artworkPath
                     set end of output to lineText
                 end if
+            end if
+        on error
+            try
+                close access artworkFile
+            end try
+        end try
+    end repeat
+    set AppleScript's text item delimiters to linefeed
+    set joined to output as string
+    set AppleScript's text item delimiters to ""
+    return joined
+end tell
+'''
+    payload = run_osascript(script).strip()
+    tracks: list[dict[str, str]] = []
+    for line in payload.splitlines():
+        parts = line.split(FIELD_SEP)
+        if len(parts) != 6:
+            continue
+        track_id, title, artist, album_name, album_artist, artwork_path = parts
+        tracks.append(
+            {
+                "track_id": track_id,
+                "title": title,
+                "artist": artist,
+                "album": album_name,
+                "album_artist": album_artist,
+                "artwork_path": artwork_path,
+            }
+        )
+    save_artwork_undo_snapshot(tracks, undo_dir)
+
+
+def save_artwork_undo_for_track_ids(app_name: str, track_ids: list[int]) -> None:
+    if not track_ids:
+        return
+
+    undo_dir = Path(tempfile.mkdtemp(prefix="music-artwork-undo-"))
+    undo_posix = str(undo_dir.resolve())
+    id_list = ", ".join(str(track_id) for track_id in track_ids)
+    script = f'''
+tell application "{app_name}"
+    set output to {{}}
+    repeat with trackId in {{{id_list}}}
+        try
+            set aTrack to (first track of library playlist 1 whose id is trackId)
+            if (count of artwork of aTrack) > 0 then
+                set trackIdText to id of aTrack as string
+                set artworkPath to "{undo_posix}/" & trackIdText & ".pct"
+                set artworkFile to open for access (POSIX file artworkPath) with write permission
+                set eof artworkFile to 0
+                write (data of artwork 1 of aTrack) to artworkFile
+                close access artworkFile
+                set albumArtistName to album artist of aTrack
+                if albumArtistName is missing value then
+                    set albumArtistName to ""
+                end if
+                set lineText to trackIdText & "{FIELD_SEP}" & (name of aTrack) & "{FIELD_SEP}" & (artist of aTrack) & "{FIELD_SEP}" & (album of aTrack) & "{FIELD_SEP}" & albumArtistName & "{FIELD_SEP}" & artworkPath
+                set end of output to lineText
             end if
         on error
             try

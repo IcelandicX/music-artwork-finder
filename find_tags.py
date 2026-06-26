@@ -27,6 +27,7 @@ from music_common import (
     release_artist_name,
     search_all_releases,
 )
+from search_cache import load_cache, save_cache
 from undo_history import save_undo_snapshot
 
 
@@ -131,7 +132,12 @@ tell application "{app_name}"
         end try
     end if
     if (count of selectedItems) is 0 then
-        error "No album(s) or song(s) selected. Select album/albums or songs in Music, then run this again."
+        try
+            set selectedItems to {{current track}}
+        end try
+    end if
+    if (count of selectedItems) is 0 then
+        error "No album(s) or song(s) selected. Select album/albums or songs in Music, or start playing a song, then run this again."
     end if
 
     set targetTracks to selectedItems
@@ -280,6 +286,11 @@ def lookup_itunes_genre(artist: str, album: str) -> str | None:
 
 
 def fetch_release_tags(release_id: str, fallback_genre: str | None = None) -> list[TrackTags]:
+    cache_key = f"{release_id}|{fallback_genre or ''}"
+    cached = load_cache("release-tags", cache_key)
+    if cached is not None:
+        return [TrackTags(**item) for item in cached]
+
     params = urllib.parse.urlencode(
         {
             "inc": "artist-credits+recordings",
@@ -314,6 +325,7 @@ def fetch_release_tags(release_id: str, fallback_genre: str | None = None) -> li
                     genre=genre,
                 )
             )
+    save_cache("release-tags", cache_key, [tag.__dict__ for tag in tags])
     return tags
 
 

@@ -28,10 +28,17 @@ from find_tags import (
     fetch_release_tags,
     format_change,
     get_target_tracks,
+    get_target_tracks_for_album,
     match_tracks,
     parse_track_line,
 )
-from music_common import ReleaseMatch, choose_release_match, confirm_apply, search_all_releases
+from music_common import (
+    ReleaseMatch,
+    choose_release_match,
+    confirm_apply,
+    get_all_library_albums,
+    search_all_releases,
+)
 
 FIELD_SEP = "|||"
 
@@ -315,6 +322,62 @@ def groups_for_selection(groups: list[SplitAlbumGroup], selected_tracks: list[Tr
         if selected_ids & group_ids or selected_signatures & group_signatures:
             matched.append(group)
     return matched
+
+
+def selected_tracks_indicate_split(selected_tracks: list[TrackSnapshot]) -> bool:
+    if len(build_album_buckets(selected_tracks)) > 1:
+        return True
+    return bool(find_split_groups(selected_tracks))
+
+
+def related_library_tracks_for_selection(
+    app_name: str,
+    selected_tracks: list[TrackSnapshot],
+) -> list[TrackSnapshot]:
+    selected_buckets = build_album_buckets(selected_tracks)
+    if not selected_buckets:
+        return selected_tracks
+
+    candidates: list[AlbumInfo] = []
+    seen: set[tuple[str, str]] = set()
+    for album in get_all_library_albums(app_name):
+        if any(
+            albums_related(album.album, bucket.album)
+            and artists_compatible(album.artist, bucket.album_artist or bucket.artist)
+            for bucket in selected_buckets
+        ):
+            key = (album.artist, album.album)
+            if key not in seen:
+                seen.add(key)
+                candidates.append(album)
+
+    if len(candidates) <= 1 and not selected_tracks_indicate_split(selected_tracks):
+        return selected_tracks
+
+    tracks: list[TrackSnapshot] = []
+    selected_signatures = {
+        (normalize(track.title), normalize(track.album), normalize(clean_artist_name(track.artist)))
+        for track in selected_tracks
+    }
+    seen_track_signatures: set[tuple[str, str, str]] = set(selected_signatures)
+    tracks.extend(selected_tracks)
+
+    for album in candidates:
+        try:
+            candidate_tracks = get_target_tracks_for_album(app_name, album)
+        except RuntimeError:
+            continue
+        for track in candidate_tracks:
+            signature = (
+                normalize(track.title),
+                normalize(track.album),
+                normalize(clean_artist_name(track.artist)),
+            )
+            if signature in seen_track_signatures:
+                continue
+            seen_track_signatures.add(signature)
+            tracks.append(track)
+    return tracks
 
 
 def album_probe_candidates(group: SplitAlbumGroup, app_name: str) -> list[AlbumInfo]:
@@ -606,8 +669,8 @@ def auto_resolve_for_selection(
     if not selected:
         return False
 
-    library_tracks = get_all_library_tracks(app_name)
-    groups = groups_for_selection(find_split_groups(library_tracks), selected)
+    candidate_tracks = related_library_tracks_for_selection(app_name, selected)
+    groups = groups_for_selection(find_split_groups(candidate_tracks), selected)
     if not groups:
         return False
 

@@ -179,8 +179,9 @@ Legacy alias: `find-album-artwork` → same as `music-artwork`.
 
 ## How matching works
 
-- **Deep search** queries multiple services, deduplicates results, ranks them with the same album/artist scoring rules, and caches release/artwork search results for faster repeat runs.
+- **Deep search** queries multiple services, deduplicates results, ranks them with the same album/artist scoring rules, and caches release/artwork/tracklist results for faster repeat runs.
 - **Split album resolve** finds song(s) tagged under different album or artist names that belong together, looks up the correct release online, and merges them under one album.
+- **Fast AI mode** only fetches related album candidates around the current selection instead of scanning every track in the library.
 - **AI Deep Dive Resolve** scores candidates using selected song titles, local vs. release track counts, album-title variants, artist and album-artist clues, plus deep-search release matches before choosing a merge target.
 - **Artist names** are normalized (parenthetical credits like `Fever Ray (Karin Dreijer Andersson)` are stripped for search).
 - **Live albums** are scored carefully so a different venue or city does not win over the correct release.
