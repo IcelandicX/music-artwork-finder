@@ -645,8 +645,40 @@ def search_itunes(album: AlbumInfo, limit: int = 12) -> list[ArtworkMatch]:
     return sorted(matches, key=lambda match: match.score, reverse=True)
 
 
+def make_square_artwork(image_path: Path) -> None:
+    dimensions = image_dimensions(image_path.read_bytes())
+    if not dimensions:
+        return
+
+    width, height = dimensions
+    if width == height:
+        return
+
+    side = min(width, height)
+    temp_path = image_path.with_name(f"{image_path.stem}.square{image_path.suffix}")
+    result = subprocess.run(
+        [
+            "sips",
+            "--cropToHeightWidth",
+            str(side),
+            str(side),
+            str(image_path),
+            "--out",
+            str(temp_path),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0 or not temp_path.exists():
+        message = result.stderr.strip() or result.stdout.strip() or "Could not crop artwork to a square."
+        raise RuntimeError(message)
+    temp_path.replace(image_path)
+
+
 def download_artwork(url: str, destination: Path) -> None:
     destination.write_bytes(fetch_bytes(url))
+    make_square_artwork(destination)
 
 
 def list_match_candidates(album: AlbumInfo, min_score: float) -> list[ArtworkCandidate]:

@@ -73,16 +73,16 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-find
 
 | Menu item | What it does |
 | --- | --- |
-| **AI All-in-One Fix** | Deep-resolve split album(s), fix tags, find artwork, preview, and save undo metadata |
-| **Fix Tags and Artwork** | One MusicBrainz match for both tags and cover art; preview before apply |
-| **Find Artwork for Selected Album(s)** | Best artwork match with preview |
+| **AI All-in-One Fix** | Deep-resolve split album(s), fix tags, find artwork, auto-apply, and save undo metadata |
+| **Fix Tags and Artwork** | One MusicBrainz match for both tags and cover art; auto-applies |
+| **Find Artwork for Selected Album(s)** | Best artwork match; auto-applies |
 | **Choose Artwork...** | Pick from multiple artwork candidates |
 | **Preview Artwork Matches** | List top matches without applying |
-| **Fix Tags for Selected Album(s)** | Apply MusicBrainz tags with confirmation |
+| **Fix Tags for Selected Album(s)** | Apply MusicBrainz tags automatically |
 | **Choose Tags...** | Pick which release metadata to use |
 | **Preview Tag Matches** | List tag matches without applying |
-| **Resolve Split Album(s)** | Find and combine split album(s) or song(s) under one album |
-| **AI Deep Dive Resolve** | Use song-title, track-count, album-variant, and deep-search evidence to pick the best merge |
+| **Resolve Split Album(s)** | Find and combine split album(s) or song(s) under one album; auto-applies |
+| **AI Deep Dive Resolve** | Use song-title, track-count, album-variant, and deep-search evidence to pick the best merge; auto-applies |
 | **Undo Last Metadata Change** | Restore the previous tags saved before the last tag or split-album change |
 | **Fix Missing Artwork** | Batch: up to 20 albums missing artwork |
 | **Fix Tags in Library** | Batch: up to 20 albums with incorrect tags |
@@ -93,12 +93,12 @@ All commands read the current selection in Music unless you use batch modes.
 
 ### `music-ai`
 
-Recommended all-in-one workflow. It uses AI-style deep evidence scoring to resolve split album(s), then fixes tags and artwork with preview and undo support.
+Recommended all-in-one workflow. It uses AI-style deep evidence scoring to resolve split album(s), then fixes tags and artwork automatically with undo support.
 
 ```bash
 music-ai
 music-ai --dry-run
-music-ai --no-preview
+music-ai --preview
 music-ai --selection-only
 music-ai --pick
 ```
@@ -185,6 +185,7 @@ Legacy alias: `find-album-artwork` → same as `music-artwork`.
 - **Artist names** are normalized (parenthetical credits like `Fever Ray (Karin Dreijer Andersson)` are stripped for search).
 - **Live albums** are scored carefully so a different venue or city does not win over the correct release.
 - **Artwork** prefers metadata match quality over raw pixel size—a high-res wrong cover loses to a correct lower-res match.
+- **Artwork is always square**: non-square covers are center-cropped before previewing or applying to Music.
 - **Preview** opens the chosen artwork in Preview.app (or shows a confirmation dialog for tags) before anything is written to Music.
 - **Undo** saves previous metadata and artwork before writes, then `music-undo` can restore the latest snapshot.
 - After applying artwork, tracks are **re-embedded** so cover art is stored in the files, not only in Music’s library database.

@@ -13,13 +13,18 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "AI all-in-one fix: deep-resolve split album(s), fix tags, "
-            "find artwork, preview, and save undo metadata."
+            "find artwork, auto-apply, and save undo metadata."
         )
+    )
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Show a confirmation preview before applying.",
     )
     parser.add_argument(
         "--no-preview",
         action="store_true",
-        help="Apply without the confirmation preview.",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--dry-run",
@@ -55,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         "--min-score",
         str(args.min_score),
     ]
-    if not args.no_preview and not args.dry_run:
+    if args.preview and not args.dry_run:
         fix_args.append("--preview")
     if args.dry_run:
         fix_args.append("--dry-run")

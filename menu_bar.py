@@ -67,13 +67,13 @@ class ArtworkMenuBarApp(rumps.App):
     def fix_tags_and_artwork(self, _: rumps.MenuItem) -> None:
         self._run_script(
             FIX_ALBUM,
-            ["--preview", "--resolve-splits", "--ai-deep-dive"],
+            ["--resolve-splits", "--ai-deep-dive"],
             title="Album fix",
         )
 
     @rumps.clicked("Find Artwork for Selected Album(s)")
     def find_artwork(self, _: rumps.MenuItem) -> None:
-        self._run_script(FIND_ARTWORK, ["--preview"], title="Album artwork")
+        self._run_script(FIND_ARTWORK, [], title="Album artwork")
 
     @rumps.clicked("Choose Artwork...")
     def choose_artwork(self, _: rumps.MenuItem) -> None:
@@ -85,7 +85,7 @@ class ArtworkMenuBarApp(rumps.App):
 
     @rumps.clicked("Fix Tags for Selected Album(s)")
     def fix_tags(self, _: rumps.MenuItem) -> None:
-        self._run_script(FIND_TAGS, ["--preview"], title="Music tags")
+        self._run_script(FIND_TAGS, [], title="Music tags")
 
     @rumps.clicked("Choose Tags...")
     def choose_tags(self, _: rumps.MenuItem) -> None:
@@ -97,13 +97,13 @@ class ArtworkMenuBarApp(rumps.App):
 
     @rumps.clicked("Resolve Split Album(s)")
     def resolve_splits(self, _: rumps.MenuItem) -> None:
-        self._run_script(RESOLVE_SPLITS, ["--preview"], title="Split album resolve")
+        self._run_script(RESOLVE_SPLITS, [], title="Split album resolve")
 
     @rumps.clicked("AI Deep Dive Resolve")
     def ai_deep_dive_resolve(self, _: rumps.MenuItem) -> None:
         self._run_script(
             RESOLVE_SPLITS,
-            ["--preview", "--ai-deep-dive"],
+            ["--ai-deep-dive"],
             title="AI deep dive resolve",
         )
 
@@ -166,7 +166,7 @@ class ArtworkMenuBarApp(rumps.App):
                 "Select album/albums or songs in Music, then choose an action.\n\n"
                 "Fix Tags and Artwork can auto-resolve split album(s) with AI-style "
                 "deep evidence scoring, uses one MusicBrainz match for both steps, "
-                "shows a preview before applying, and re-embeds artwork into files."
+                "auto-applies changes, saves undo history, and re-embeds artwork into files."
             ),
             ok="OK",
         )
