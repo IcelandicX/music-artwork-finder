@@ -16,6 +16,7 @@ from find_artwork import (
     run_osascript,
     score_result,
 )
+from search_cache import load_cache, save_cache
 
 
 MUSICBRAINZ_RELEASE_URL = "https://musicbrainz.org/ws/2/release"
@@ -88,6 +89,11 @@ def search_musicbrainz_releases(album: AlbumInfo, limit: int = 8) -> list[Releas
 def search_all_releases(album: AlbumInfo, limit: int = 8) -> list[ReleaseMatch]:
     from search_providers import deep_search_release_hints, lookup_musicbrainz_release
 
+    cache_key = f"{album.artist}|{album.album}|{limit}"
+    cached = load_cache("releases", cache_key)
+    if cached is not None:
+        return [ReleaseMatch(**item) for item in cached]
+
     matches = search_musicbrainz_releases(album, limit=limit)
     seen_release_ids = {match.release_id for match in matches}
 
@@ -124,7 +130,9 @@ def search_all_releases(album: AlbumInfo, limit: int = 8) -> list[ReleaseMatch]:
             )
         )
 
-    return sorted(matches, key=lambda match: (match.score, match.track_count), reverse=True)
+    result = sorted(matches, key=lambda match: (match.score, match.track_count), reverse=True)
+    save_cache("releases", cache_key, [match.__dict__ for match in result])
+    return result
 
 
 def choose_release_interactive(matches: list[ReleaseMatch]) -> ReleaseMatch | None:

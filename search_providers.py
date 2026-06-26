@@ -23,6 +23,7 @@ from find_artwork import (
     musicbrainz_search_queries,
     score_result,
 )
+from search_cache import load_cache, save_cache
 
 
 def _release_artist_name(release: dict) -> str:
@@ -453,6 +454,11 @@ def dedupe_artwork_matches(matches: list[ArtworkMatch]) -> list[ArtworkMatch]:
 
 
 def deep_search_artwork(album: AlbumInfo) -> list[ArtworkMatch]:
+    cache_key = f"{album.artist}|{album.album}"
+    cached = load_cache("artwork-matches", cache_key)
+    if cached is not None:
+        return [ArtworkMatch(**item) for item in cached]
+
     matches: list[ArtworkMatch] = []
     providers = (
         search_deezer_artwork,
@@ -466,7 +472,9 @@ def deep_search_artwork(album: AlbumInfo) -> list[ArtworkMatch]:
             matches.extend(provider(album))
         except OSError:
             continue
-    return dedupe_artwork_matches(matches)
+    result = dedupe_artwork_matches(matches)
+    save_cache("artwork-matches", cache_key, [match.__dict__ for match in result])
+    return result
 
 
 def deep_search_release_hints(album: AlbumInfo) -> list[ExternalReleaseHint]:

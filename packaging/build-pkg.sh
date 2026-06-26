@@ -14,9 +14,11 @@ OUTPUT_PKG="$DIST_DIR/MusicFix-${VERSION}.pkg"
 APP_FILES=(
     find_artwork.py
     find_tags.py
+    music_ai.py
     fix_album.py
     menu_bar.py
     music_common.py
+    search_cache.py
     search_providers.py
     resolve_splits.py
     undo_history.py
@@ -42,6 +44,7 @@ rsync -a \
 ln -sf /usr/local/share/music-artwork-finder/find_artwork.py "$PAYLOAD/usr/local/bin/music-artwork"
 ln -sf /usr/local/share/music-artwork-finder/find_artwork.py "$PAYLOAD/usr/local/bin/find-album-artwork"
 ln -sf /usr/local/share/music-artwork-finder/find_tags.py "$PAYLOAD/usr/local/bin/music-tags"
+ln -sf /usr/local/share/music-artwork-finder/music_ai.py "$PAYLOAD/usr/local/bin/music-ai"
 ln -sf /usr/local/share/music-artwork-finder/fix_album.py "$PAYLOAD/usr/local/bin/music-fix"
 ln -sf /usr/local/share/music-artwork-finder/resolve_splits.py "$PAYLOAD/usr/local/bin/music-splits"
 ln -sf /usr/local/share/music-artwork-finder/undo_last.py "$PAYLOAD/usr/local/bin/music-undo"

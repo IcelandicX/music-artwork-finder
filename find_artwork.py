@@ -16,12 +16,16 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
+from search_cache import load_cache, save_cache
+from undo_history import save_artwork_undo_snapshot
+
 
 ITUNES_SEARCH_URL = "https://itunes.apple.com/search"
 MUSICBRAINZ_SEARCH_URL = "https://musicbrainz.org/ws/2/release"
 USER_AGENT = "MusicArtworkFinder/1.0 (https://github.com/local/music-artwork-finder)"
 ITUNES_SIZE_CANDIDATES = (600, 800, 1000, 1200, 1400, 1500, 1800, 2000, 2500, 3000, 4000, 5000)
 MUSICBRAINZ_MIN_INTERVAL = 1.0
+FIELD_SEP = "|||"
 _last_musicbrainz_request = 0.0
 
 
@@ -766,6 +770,105 @@ end tell
     return int(updated)
 
 
+def save_artwork_undo(
+    app_name: str,
+    entire_album: bool,
+    skip_existing: bool = False,
+) -> None:
+    undo_dir = Path(tempfile.mkdtemp(prefix="music-artwork-undo-"))
+    undo_posix = str(undo_dir.resolve())
+    script = f'''
+tell application "{app_name}"
+    set targetTracks to {{}}
+    if {str(entire_album).lower()} is true then
+        set selectedItems to selection
+        if (count of selectedItems) is 0 then
+            try
+                tell front browser window
+                    set selectedItems to selection
+                end tell
+            end try
+        end if
+        set firstItem to item 1 of selectedItems
+        set itemClass to class of firstItem as string
+        set albumName to missing value
+        set artistName to missing value
+        if itemClass contains "track" then
+            set albumName to album of firstItem
+            set artistName to artist of firstItem
+        else
+            try
+                set albumName to name of firstItem
+                set artistName to artist of firstItem
+            end try
+            if albumName is missing value or artistName is missing value then
+                set albumName to album of firstItem
+                set artistName to artist of firstItem
+            end if
+        end if
+        set targetTracks to (every track of library playlist 1 whose album is albumName and artist is artistName)
+    else
+        set targetTracks to selection
+        if (count of targetTracks) is 0 then
+            try
+                tell front browser window
+                    set targetTracks to selection
+                end tell
+            end try
+        end if
+    end if
+
+    set output to {{}}
+    repeat with aTrack in targetTracks
+        try
+            if not {str(skip_existing).lower()} or (count of artwork of aTrack) is 0 then
+                if (count of artwork of aTrack) > 0 then
+                    set trackId to id of aTrack as string
+                    set artworkPath to "{undo_posix}/" & trackId & ".pct"
+                    set artworkFile to open for access (POSIX file artworkPath) with write permission
+                    set eof artworkFile to 0
+                    write (data of artwork 1 of aTrack) to artworkFile
+                    close access artworkFile
+                    set albumArtistName to album artist of aTrack
+                    if albumArtistName is missing value then
+                        set albumArtistName to ""
+                    end if
+                    set lineText to trackId & "{FIELD_SEP}" & (name of aTrack) & "{FIELD_SEP}" & (artist of aTrack) & "{FIELD_SEP}" & (album of aTrack) & "{FIELD_SEP}" & albumArtistName & "{FIELD_SEP}" & artworkPath
+                    set end of output to lineText
+                end if
+            end if
+        on error
+            try
+                close access artworkFile
+            end try
+        end try
+    end repeat
+    set AppleScript's text item delimiters to linefeed
+    set joined to output as string
+    set AppleScript's text item delimiters to ""
+    return joined
+end tell
+'''
+    payload = run_osascript(script).strip()
+    tracks: list[dict[str, str]] = []
+    for line in payload.splitlines():
+        parts = line.split(FIELD_SEP)
+        if len(parts) != 6:
+            continue
+        track_id, title, artist, album_name, album_artist, artwork_path = parts
+        tracks.append(
+            {
+                "track_id": track_id,
+                "title": title,
+                "artist": artist,
+                "album": album_name,
+                "album_artist": album_artist,
+                "artwork_path": artwork_path,
+            }
+        )
+    save_artwork_undo_snapshot(tracks, undo_dir)
+
+
 def get_albums_missing_artwork(app_name: str) -> list[AlbumInfo]:
     script = f'''
 tell application "{app_name}"
@@ -853,6 +956,7 @@ def apply_candidate(
         temp_dir_path = Path(temp_dir.name)
         image_path = temp_dir_path / "artwork.jpg"
         download_artwork(candidate.url, image_path)
+        save_artwork_undo(app_name, entire_album=entire_album, skip_existing=skip_existing)
         updated = apply_artwork(
             app_name,
             album,
@@ -865,6 +969,7 @@ def apply_candidate(
         temp_dir.cleanup()
         return updated
 
+    save_artwork_undo(app_name, entire_album=entire_album, skip_existing=skip_existing)
     updated = apply_artwork(
         app_name,
         album,
@@ -878,6 +983,11 @@ def apply_candidate(
 
 
 def artwork_from_release(release_match: ReleaseMatch, album: AlbumInfo) -> ArtworkCandidate | None:
+    cache_key = f"{release_match.release_id}|{album.artist}|{album.album}"
+    cached = load_cache("release-artwork", cache_key)
+    if cached is not None:
+        return ArtworkCandidate(**cached) if cached else None
+
     try:
         cover_payload = fetch_musicbrainz_json(
             f"https://coverartarchive.org/release/{release_match.release_id}"
@@ -923,6 +1033,7 @@ def artwork_from_release(release_match: ReleaseMatch, album: AlbumInfo) -> Artwo
             if best is None or width * height > best.width * best.height:
                 best = candidate
         if best is not None:
+            save_cache("release-artwork", cache_key, best.__dict__)
             return best
 
     probe_album = AlbumInfo(
@@ -935,7 +1046,7 @@ def artwork_from_release(release_match: ReleaseMatch, album: AlbumInfo) -> Artwo
             continue
         candidate = resolve_artwork_candidate(match)
         if candidate is not None:
-            return ArtworkCandidate(
+            result = ArtworkCandidate(
                 url=candidate.url,
                 source=candidate.source,
                 title=release_match.title,
@@ -945,6 +1056,8 @@ def artwork_from_release(release_match: ReleaseMatch, album: AlbumInfo) -> Artwo
                 size_bytes=candidate.size_bytes,
                 score=release_match.score,
             )
+            save_cache("release-artwork", cache_key, result.__dict__)
+            return result
 
     from search_providers import deep_search_artwork
 
@@ -953,7 +1066,7 @@ def artwork_from_release(release_match: ReleaseMatch, album: AlbumInfo) -> Artwo
             continue
         candidate = resolve_artwork_candidate(match)
         if candidate is not None:
-            return ArtworkCandidate(
+            result = ArtworkCandidate(
                 url=candidate.url,
                 source=candidate.source,
                 title=release_match.title,
@@ -963,6 +1076,9 @@ def artwork_from_release(release_match: ReleaseMatch, album: AlbumInfo) -> Artwo
                 size_bytes=candidate.size_bytes,
                 score=release_match.score,
             )
+            save_cache("release-artwork", cache_key, result.__dict__)
+            return result
+    save_cache("release-artwork", cache_key, None)
     return None
 
 

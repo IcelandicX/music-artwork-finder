@@ -73,6 +73,7 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-find
 
 | Menu item | What it does |
 | --- | --- |
+| **AI All-in-One Fix** | Deep-resolve split album(s), fix tags, find artwork, preview, and save undo metadata |
 | **Fix Tags and Artwork** | One MusicBrainz match for both tags and cover art; preview before apply |
 | **Find Artwork for Selected Album(s)** | Best artwork match with preview |
 | **Choose Artwork...** | Pick from multiple artwork candidates |
@@ -89,6 +90,18 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-find
 ## Command-line usage
 
 All commands read the current selection in Music unless you use batch modes.
+
+### `music-ai`
+
+Recommended all-in-one workflow. It uses AI-style deep evidence scoring to resolve split album(s), then fixes tags and artwork with preview and undo support.
+
+```bash
+music-ai
+music-ai --dry-run
+music-ai --no-preview
+music-ai --selection-only
+music-ai --pick
+```
 
 ### `music-artwork`
 
@@ -153,27 +166,27 @@ music-splits --pick
 
 ### `music-undo`
 
-Undo the last Music Fix metadata change. This restores tags saved before `music-tags`, `music-fix`, or `music-splits` wrote changes.
+Undo the last Music Fix metadata or artwork change. This restores tags saved before `music-tags`, `music-fix`, or `music-splits` wrote changes, and restores previous artwork saved before cover art updates.
 
 ```bash
 music-undo
 music-undo --dry-run
 ```
 
-Undo history is stored in `~/.music-artwork-finder/undo`. Artwork changes are not restored yet.
+Undo history is stored in `~/.music-artwork-finder/undo`.
 
 Legacy alias: `find-album-artwork` → same as `music-artwork`.
 
 ## How matching works
 
-- **Deep search** queries multiple services, deduplicates results, and ranks them with the same album/artist scoring rules.
+- **Deep search** queries multiple services, deduplicates results, ranks them with the same album/artist scoring rules, and caches release/artwork search results for faster repeat runs.
 - **Split album resolve** finds song(s) tagged under different album or artist names that belong together, looks up the correct release online, and merges them under one album.
 - **AI Deep Dive Resolve** scores candidates using selected song titles, local vs. release track counts, album-title variants, artist and album-artist clues, plus deep-search release matches before choosing a merge target.
 - **Artist names** are normalized (parenthetical credits like `Fever Ray (Karin Dreijer Andersson)` are stripped for search).
 - **Live albums** are scored carefully so a different venue or city does not win over the correct release.
 - **Artwork** prefers metadata match quality over raw pixel size—a high-res wrong cover loses to a correct lower-res match.
 - **Preview** opens the chosen artwork in Preview.app (or shows a confirmation dialog for tags) before anything is written to Music.
-- **Undo** saves previous metadata before tag and split-album writes, then `music-undo` can restore the latest snapshot.
+- **Undo** saves previous metadata and artwork before writes, then `music-undo` can restore the latest snapshot.
 - After applying artwork, tracks are **re-embedded** so cover art is stored in the files, not only in Music’s library database.
 
 ### Optional API keys

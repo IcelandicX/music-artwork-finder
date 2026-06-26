@@ -18,6 +18,7 @@ except ImportError as exc:
 SCRIPT_DIR = Path(__file__).resolve().parent
 FIND_ARTWORK = SCRIPT_DIR / "find_artwork.py"
 FIND_TAGS = SCRIPT_DIR / "find_tags.py"
+MUSIC_AI = SCRIPT_DIR / "music_ai.py"
 FIX_ALBUM = SCRIPT_DIR / "fix_album.py"
 RESOLVE_SPLITS = SCRIPT_DIR / "resolve_splits.py"
 UNDO_LAST = SCRIPT_DIR / "undo_last.py"
@@ -35,6 +36,8 @@ class ArtworkMenuBarApp(rumps.App):
             quit_button="Quit",
         )
         self.menu = [
+            "AI All-in-One Fix",
+            None,
             "Fix Tags and Artwork",
             None,
             "Find Artwork for Selected Album(s)",
@@ -55,6 +58,10 @@ class ArtworkMenuBarApp(rumps.App):
             None,
             "About",
         ]
+
+    @rumps.clicked("AI All-in-One Fix")
+    def ai_all_in_one_fix(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_AI, [], title="AI all-in-one fix")
 
     @rumps.clicked("Fix Tags and Artwork")
     def fix_tags_and_artwork(self, _: rumps.MenuItem) -> None:
