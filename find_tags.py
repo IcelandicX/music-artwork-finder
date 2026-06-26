@@ -27,6 +27,7 @@ from music_common import (
     release_artist_name,
     search_all_releases,
 )
+from undo_history import save_undo_snapshot
 
 
 from find_artwork import fetch_musicbrainz_json
@@ -130,7 +131,7 @@ tell application "{app_name}"
         end try
     end if
     if (count of selectedItems) is 0 then
-        error "No album or tracks selected. Select an album or tracks in Music, then run this again."
+        error "No album(s) or song(s) selected. Select album/albums or songs in Music, then run this again."
     end if
 
     set targetTracks to selectedItems
@@ -159,6 +160,47 @@ tell application "{app_name}"
         error "No tracks found to update."
     end if
 
+    set output to {{}}
+    repeat with t in targetTracks
+        set albumArtistName to album artist of t
+        if albumArtistName is missing value then
+            set albumArtistName to ""
+        end if
+        set genreName to genre of t
+        if genreName is missing value then
+            set genreName to ""
+        end if
+        set lineText to (id of t as string) & "{FIELD_SEP}" & (name of t) & "{FIELD_SEP}" & (artist of t) & "{FIELD_SEP}" & (album of t) & "{FIELD_SEP}" & albumArtistName & "{FIELD_SEP}" & (track number of t as string) & "{FIELD_SEP}" & (disc number of t as string) & "{FIELD_SEP}" & (year of t as string) & "{FIELD_SEP}" & genreName
+        set end of output to lineText
+    end repeat
+    set AppleScript's text item delimiters to linefeed
+    set joined to output as string
+    set AppleScript's text item delimiters to ""
+    return joined
+end tell
+'''
+    payload = run_osascript(script).strip()
+    if not payload:
+        return []
+    return [parse_track_line(line) for line in payload.splitlines() if line.strip()]
+
+
+def get_tracks_by_ids(app_name: str, track_ids: list[int]) -> list[TrackSnapshot]:
+    if not track_ids:
+        return []
+
+    id_list = ", ".join(str(track_id) for track_id in track_ids)
+    script = f'''
+tell application "{app_name}"
+    set targetTracks to {{}}
+    repeat with trackId in {{{id_list}}}
+        try
+            set end of targetTracks to (first track of library playlist 1 whose id is trackId)
+        end try
+    end repeat
+    if (count of targetTracks) is 0 then
+        error "No tracks found to update."
+    end if
     set output to {{}}
     repeat with t in targetTracks
         set albumArtistName to album artist of t
@@ -346,9 +388,17 @@ def format_change(change: TagChange) -> str:
     return "\n".join(lines)
 
 
-def apply_tag_changes(app_name: str, changes: list[TagChange]) -> int:
+def apply_tag_changes(
+    app_name: str,
+    changes: list[TagChange],
+    save_undo: bool = True,
+    undo_action: str = "metadata update",
+) -> int:
     if not changes:
         return 0
+
+    if save_undo:
+        save_undo_snapshot(changes, undo_action)
 
     records: list[str] = []
     for change in changes:
@@ -523,6 +573,38 @@ def run_batch_tags(
     return 0 if failures == 0 else 1
 
 
+def get_tracks_for_album_title(app_name: str, album_title: str) -> list[TrackSnapshot]:
+    script = f'''
+tell application "{app_name}"
+    set targetTracks to (every track of library playlist 1 whose album is "{applescript_string(album_title)}")
+    if (count of targetTracks) is 0 then
+        error "No tracks found for album."
+    end if
+    set output to {{}}
+    repeat with t in targetTracks
+        set albumArtistName to album artist of t
+        if albumArtistName is missing value then
+            set albumArtistName to ""
+        end if
+        set genreName to genre of t
+        if genreName is missing value then
+            set genreName to ""
+        end if
+        set lineText to (id of t as string) & "{FIELD_SEP}" & (name of t) & "{FIELD_SEP}" & (artist of t) & "{FIELD_SEP}" & (album of t) & "{FIELD_SEP}" & albumArtistName & "{FIELD_SEP}" & (track number of t as string) & "{FIELD_SEP}" & (disc number of t as string) & "{FIELD_SEP}" & (year of t as string) & "{FIELD_SEP}" & genreName
+        set end of output to lineText
+    end repeat
+    set AppleScript's text item delimiters to linefeed
+    set joined to output as string
+    set AppleScript's text item delimiters to ""
+    return joined
+end tell
+'''
+    payload = run_osascript(script).strip()
+    if not payload:
+        return []
+    return [parse_track_line(line) for line in payload.splitlines() if line.strip()]
+
+
 def get_target_tracks_for_album(app_name: str, album: AlbumInfo) -> list[TrackSnapshot]:
     script = f'''
 tell application "{app_name}"
@@ -560,7 +642,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--selection-only",
         action="store_true",
-        help="Update only the selected tracks instead of the whole album.",
+        help="Update only the selected song(s) instead of the whole album(s).",
     )
     parser.add_argument(
         "--min-score",

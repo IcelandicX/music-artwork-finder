@@ -18,6 +18,9 @@ APP_FILES=(
     menu_bar.py
     music_common.py
     search_providers.py
+    resolve_splits.py
+    undo_history.py
+    undo_last.py
     requirements.txt
 )
 
@@ -40,6 +43,8 @@ ln -sf /usr/local/share/music-artwork-finder/find_artwork.py "$PAYLOAD/usr/local
 ln -sf /usr/local/share/music-artwork-finder/find_artwork.py "$PAYLOAD/usr/local/bin/find-album-artwork"
 ln -sf /usr/local/share/music-artwork-finder/find_tags.py "$PAYLOAD/usr/local/bin/music-tags"
 ln -sf /usr/local/share/music-artwork-finder/fix_album.py "$PAYLOAD/usr/local/bin/music-fix"
+ln -sf /usr/local/share/music-artwork-finder/resolve_splits.py "$PAYLOAD/usr/local/bin/music-splits"
+ln -sf /usr/local/share/music-artwork-finder/undo_last.py "$PAYLOAD/usr/local/bin/music-undo"
 
 chmod +x "$ROOT/packaging/scripts/preinstall" "$ROOT/packaging/scripts/postinstall"
 chmod +x "$PAYLOAD/usr/local/share/music-artwork-finder/scripts/setup-user.sh"

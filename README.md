@@ -61,7 +61,7 @@ The scripts control Apple Music through AppleScript. The first time you run a co
 
 If no prompt appears, run any command once with Music open and selected tracks, then check Automation settings manually.
 
-Music must be **running** when you use these tools. Select one or more tracks from an album—or select an album in the Albums view—before running a command.
+Music must be **running** when you use these tools. Select album/albums or songs in Music before running a command.
 
 ## Menu bar app
 
@@ -74,12 +74,15 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-find
 | Menu item | What it does |
 | --- | --- |
 | **Fix Tags and Artwork** | One MusicBrainz match for both tags and cover art; preview before apply |
-| **Find Artwork for Selected Album** | Best artwork match with preview |
+| **Find Artwork for Selected Album(s)** | Best artwork match with preview |
 | **Choose Artwork...** | Pick from multiple artwork candidates |
 | **Preview Artwork Matches** | List top matches without applying |
-| **Fix Tags for Selected Album** | Apply MusicBrainz tags with confirmation |
+| **Fix Tags for Selected Album(s)** | Apply MusicBrainz tags with confirmation |
 | **Choose Tags...** | Pick which release metadata to use |
 | **Preview Tag Matches** | List tag matches without applying |
+| **Resolve Split Album(s)** | Find and combine split album(s) or song(s) under one album |
+| **AI Deep Dive Resolve** | Use song-title, track-count, album-variant, and deep-search evidence to pick the best merge |
+| **Undo Last Metadata Change** | Restore the previous tags saved before the last tag or split-album change |
 | **Fix Missing Artwork** | Batch: up to 20 albums missing artwork |
 | **Fix Tags in Library** | Batch: up to 20 albums with incorrect tags |
 
@@ -98,7 +101,7 @@ music-artwork --pick             # choose from a list of matches
 music-artwork --list-matches     # print candidates (scores + resolution)
 music-artwork --dry-run          # search only, no changes
 music-artwork --skip-if-artwork-exists
-music-artwork --selection-only   # selected tracks only, not whole album
+music-artwork --selection-only   # selected song(s) only, not whole album(s)
 music-artwork --batch-missing --limit 20
 music-artwork --min-score 0.6    # require stronger title/artist match
 ```
@@ -126,21 +129,51 @@ Fix **tags and artwork together** using a single MusicBrainz release match (avoi
 ```bash
 music-fix
 music-fix --preview
+music-fix --resolve-splits   # combine split album(s) first, then fix
+music-fix --resolve-splits --ai-deep-dive
 music-fix --pick
 music-fix --tags-only
 music-fix --artwork-only
 music-fix --dry-run
 ```
 
+### `music-splits`
+
+Detect and combine split album(s) or song(s) that belong together but have mismatched album or artist tags.
+
+```bash
+music-splits
+music-splits --preview
+music-splits --ai-deep-dive --preview
+music-splits --library --limit 20
+music-splits --library --ai-deep-dive --limit 20
+music-splits --dry-run
+music-splits --pick
+```
+
+### `music-undo`
+
+Undo the last Music Fix metadata change. This restores tags saved before `music-tags`, `music-fix`, or `music-splits` wrote changes.
+
+```bash
+music-undo
+music-undo --dry-run
+```
+
+Undo history is stored in `~/.music-artwork-finder/undo`. Artwork changes are not restored yet.
+
 Legacy alias: `find-album-artwork` → same as `music-artwork`.
 
 ## How matching works
 
 - **Deep search** queries multiple services, deduplicates results, and ranks them with the same album/artist scoring rules.
+- **Split album resolve** finds song(s) tagged under different album or artist names that belong together, looks up the correct release online, and merges them under one album.
+- **AI Deep Dive Resolve** scores candidates using selected song titles, local vs. release track counts, album-title variants, artist and album-artist clues, plus deep-search release matches before choosing a merge target.
 - **Artist names** are normalized (parenthetical credits like `Fever Ray (Karin Dreijer Andersson)` are stripped for search).
 - **Live albums** are scored carefully so a different venue or city does not win over the correct release.
 - **Artwork** prefers metadata match quality over raw pixel size—a high-res wrong cover loses to a correct lower-res match.
 - **Preview** opens the chosen artwork in Preview.app (or shows a confirmation dialog for tags) before anything is written to Music.
+- **Undo** saves previous metadata before tag and split-album writes, then `music-undo` can restore the latest snapshot.
 - After applying artwork, tracks are **re-embedded** so cover art is stored in the files, not only in Music’s library database.
 
 ### Optional API keys

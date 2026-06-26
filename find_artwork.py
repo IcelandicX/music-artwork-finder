@@ -90,7 +90,7 @@ tell application "{app_name}"
         end try
     end if
     if (count of selectedItems) is 0 then
-        error "No album or tracks selected. Select an album or any track from an album in Music, then run this again."
+        error "No album(s) or song(s) selected. Select album/albums or songs in Music, then run this again."
     end if
 
     set theItem to item 1 of selectedItems
@@ -1149,12 +1149,12 @@ def notify(title: str, message: str) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Find album artwork online and apply it to the selected album in Music."
+        description="Find album artwork online and apply it to the selected album(s) in Music."
     )
     parser.add_argument(
         "--selection-only",
         action="store_true",
-        help="Apply artwork only to selected tracks instead of every track in the album.",
+        help="Apply artwork only to selected song(s) instead of every song in the album(s).",
     )
     parser.add_argument(
         "--skip-if-artwork-exists",

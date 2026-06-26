@@ -16,8 +16,15 @@ from find_artwork import (
     notify,
     process_album,
 )
-from find_tags import format_change, get_target_tracks, process_tags
+from find_tags import (
+    format_change,
+    get_target_tracks,
+    get_tracks_by_ids,
+    get_tracks_for_album_title,
+    process_tags,
+)
 from music_common import choose_release_match, confirm_apply
+from resolve_splits import auto_resolve_for_selection
 
 
 def build_preview_message(
@@ -45,12 +52,12 @@ def build_preview_message(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Fix tags and artwork for the selected album using one shared online match."
+        description="Fix tags and artwork for the selected album(s) using one shared online match."
     )
     parser.add_argument(
         "--selection-only",
         action="store_true",
-        help="Only update the selected tracks instead of the whole album.",
+        help="Only update the selected song(s) instead of the whole album(s).",
     )
     parser.add_argument(
         "--min-score",
@@ -88,6 +95,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Skip re-embedding artwork after applying it.",
     )
+    parser.add_argument(
+        "--resolve-splits",
+        action="store_true",
+        help="Detect and combine split album(s) or song(s) before fixing tags and artwork.",
+    )
+    parser.add_argument(
+        "--ai-deep-dive",
+        action="store_true",
+        help="Use deeper song-title and release-evidence scoring when resolving split album(s).",
+    )
     args = parser.parse_args(argv)
 
     fix_tags = not args.artwork_only
@@ -99,6 +116,26 @@ def main(argv: list[str] | None = None) -> int:
         local_tracks = get_target_tracks(app_name, entire_album=not args.selection_only)
         if not local_tracks:
             raise RuntimeError("No tracks found to update.")
+
+        if args.resolve_splits:
+            track_ids = [track.track_id for track in local_tracks]
+            auto_resolve_for_selection(
+                app_name,
+                min_score=args.min_score,
+                preview=args.preview,
+                dry_run=args.dry_run,
+                ai_deep_dive=args.ai_deep_dive,
+            )
+            if not args.dry_run:
+                local_tracks = get_tracks_by_ids(app_name, track_ids)
+                if not args.selection_only and local_tracks:
+                    merged_album = local_tracks[0].album
+                    local_tracks = get_tracks_for_album_title(app_name, merged_album)
+                    album = AlbumInfo(
+                        artist=local_tracks[0].album_artist or local_tracks[0].artist,
+                        album=merged_album,
+                        app_name=app_name,
+                    )
 
         release = choose_release_match(
             album,

@@ -12,6 +12,9 @@ python3 -m py_compile \
     menu_bar.py \
     music_common.py \
     search_providers.py \
+    resolve_splits.py \
+    undo_history.py \
+    undo_last.py \
     assets/generate-icons.py
 
 echo "Checking shell syntax..."

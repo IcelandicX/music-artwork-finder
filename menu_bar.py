@@ -19,6 +19,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 FIND_ARTWORK = SCRIPT_DIR / "find_artwork.py"
 FIND_TAGS = SCRIPT_DIR / "find_tags.py"
 FIX_ALBUM = SCRIPT_DIR / "fix_album.py"
+RESOLVE_SPLITS = SCRIPT_DIR / "resolve_splits.py"
+UNDO_LAST = SCRIPT_DIR / "undo_last.py"
 MENUBAR_ICON = SCRIPT_DIR / "assets" / "menubar-template@2x.png"
 
 
@@ -35,13 +37,18 @@ class ArtworkMenuBarApp(rumps.App):
         self.menu = [
             "Fix Tags and Artwork",
             None,
-            "Find Artwork for Selected Album",
+            "Find Artwork for Selected Album(s)",
             "Choose Artwork...",
             "Preview Artwork Matches",
             None,
-            "Fix Tags for Selected Album",
+            "Fix Tags for Selected Album(s)",
             "Choose Tags...",
             "Preview Tag Matches",
+            None,
+            "Resolve Split Album(s)",
+            "AI Deep Dive Resolve",
+            None,
+            "Undo Last Metadata Change",
             None,
             "Fix Missing Artwork",
             "Fix Tags in Library",
@@ -51,9 +58,13 @@ class ArtworkMenuBarApp(rumps.App):
 
     @rumps.clicked("Fix Tags and Artwork")
     def fix_tags_and_artwork(self, _: rumps.MenuItem) -> None:
-        self._run_script(FIX_ALBUM, ["--preview"], title="Album fix")
+        self._run_script(
+            FIX_ALBUM,
+            ["--preview", "--resolve-splits", "--ai-deep-dive"],
+            title="Album fix",
+        )
 
-    @rumps.clicked("Find Artwork for Selected Album")
+    @rumps.clicked("Find Artwork for Selected Album(s)")
     def find_artwork(self, _: rumps.MenuItem) -> None:
         self._run_script(FIND_ARTWORK, ["--preview"], title="Album artwork")
 
@@ -65,7 +76,7 @@ class ArtworkMenuBarApp(rumps.App):
     def preview_artwork_matches(self, _: rumps.MenuItem) -> None:
         self._run_script(FIND_ARTWORK, ["--list-matches"], title="Artwork matches")
 
-    @rumps.clicked("Fix Tags for Selected Album")
+    @rumps.clicked("Fix Tags for Selected Album(s)")
     def fix_tags(self, _: rumps.MenuItem) -> None:
         self._run_script(FIND_TAGS, ["--preview"], title="Music tags")
 
@@ -76,6 +87,29 @@ class ArtworkMenuBarApp(rumps.App):
     @rumps.clicked("Preview Tag Matches")
     def preview_tag_matches(self, _: rumps.MenuItem) -> None:
         self._run_script(FIND_TAGS, ["--list-matches"], title="Tag matches")
+
+    @rumps.clicked("Resolve Split Album(s)")
+    def resolve_splits(self, _: rumps.MenuItem) -> None:
+        self._run_script(RESOLVE_SPLITS, ["--preview"], title="Split album resolve")
+
+    @rumps.clicked("AI Deep Dive Resolve")
+    def ai_deep_dive_resolve(self, _: rumps.MenuItem) -> None:
+        self._run_script(
+            RESOLVE_SPLITS,
+            ["--preview", "--ai-deep-dive"],
+            title="AI deep dive resolve",
+        )
+
+    @rumps.clicked("Undo Last Metadata Change")
+    def undo_last_change(self, _: rumps.MenuItem) -> None:
+        response = rumps.alert(
+            title="Undo Last Metadata Change",
+            message="Restore the previous metadata saved before the last tag or split-album change?",
+            ok="Undo",
+            cancel="Cancel",
+        )
+        if response == 1:
+            self._run_script(UNDO_LAST, [], title="Music Fix undo")
 
     @rumps.clicked("Fix Missing Artwork")
     def fix_missing(self, _: rumps.MenuItem) -> None:
@@ -122,8 +156,9 @@ class ArtworkMenuBarApp(rumps.App):
         rumps.alert(
             title="Music Fix",
             message=(
-                "Select an album or tracks in Music, then choose an action.\n\n"
-                "Fix Tags and Artwork uses one MusicBrainz match for both steps, "
+                "Select album/albums or songs in Music, then choose an action.\n\n"
+                "Fix Tags and Artwork can auto-resolve split album(s) with AI-style "
+                "deep evidence scoring, uses one MusicBrainz match for both steps, "
                 "shows a preview before applying, and re-embeds artwork into files."
             ),
             ok="OK",
