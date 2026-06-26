@@ -6,13 +6,33 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import tempfile
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 
-from find_artwork import clean_artist_name, music_app_name, normalize, notify, token_overlap
-from find_tags import TagChange, TrackSnapshot, TrackTags, apply_tag_changes, format_change, get_target_tracks
+from find_artwork import (
+    apply_artwork_to_track_ids,
+    clean_artist_name,
+    music_app_name,
+    normalize,
+    notify,
+    run_osascript,
+    save_artwork_undo_for_track_ids,
+    token_overlap,
+)
+from find_tags import (
+    TagChange,
+    TrackSnapshot,
+    TrackTags,
+    applescript_string,
+    apply_tag_changes,
+    format_change,
+    get_target_tracks,
+)
 from music_common import confirm_apply
+from run_report import REPORT_DIR
 
 REMIX_WORDS = {
     "remix",
@@ -95,6 +115,25 @@ def choose_main_bucket(buckets: list[CombineBucket]) -> CombineBucket:
     )[0]
 
 
+def choose_main_bucket_interactive(buckets: list[CombineBucket]) -> CombineBucket:
+    options = [f"{index}. {bucket.label}" for index, bucket in enumerate(buckets, start=1)]
+    list_literal = "{" + ", ".join(f'"{applescript_string(option)}"' for option in options) + "}"
+    script = f'''
+set choices to {list_literal}
+set picked to choose from list choices with prompt "Choose the main album for disc 1:" default items {{item 1 of choices}}
+if picked is false then
+    return "CANCEL"
+else
+    return item 1 of picked
+end if
+'''
+    result = run_osascript(script)
+    if result == "CANCEL":
+        raise RuntimeError("Main album selection cancelled.")
+    chosen_index = int(result.split(".", 1)[0]) - 1
+    return buckets[chosen_index]
+
+
 def relatedness_warnings(main: CombineBucket, others: list[CombineBucket]) -> list[str]:
     warnings: list[str] = []
     main_tokens = album_tokens(main.album)
@@ -107,6 +146,30 @@ def relatedness_warnings(main: CombineBucket, others: list[CombineBucket]) -> li
         if remix_score(bucket.album) == 0 and not shared:
             warnings.append(f"Album title does not obviously look related: {bucket.label}")
     return warnings
+
+
+def duplicate_warnings(buckets: list[CombineBucket]) -> list[str]:
+    warnings: list[str] = []
+    for bucket in buckets:
+        titles: dict[str, list[str]] = defaultdict(list)
+        for track in bucket.tracks:
+            titles[normalize(track.title)].append(track.title)
+        duplicates = [items[0] for items in titles.values() if len(items) > 1]
+        if duplicates:
+            shown = ", ".join(sorted(duplicates)[:5])
+            extra = "" if len(duplicates) <= 5 else f", and {len(duplicates) - 5} more"
+            warnings.append(f"Duplicate-looking titles in {bucket.label}: {shown}{extra}")
+    return warnings
+
+
+def combined_album_name(main: CombineBucket, mode: str, explicit_album: str | None) -> str:
+    if explicit_album:
+        return explicit_album
+    if mode == "deluxe":
+        return f"{main.album} (Deluxe Edition)"
+    if mode == "plus":
+        return f"{main.album} + Remixes"
+    return main.album
 
 
 def build_changes(
@@ -145,6 +208,54 @@ def build_changes(
     return changes
 
 
+def export_main_artwork(app_name: str, main: CombineBucket, destination: Path) -> bool:
+    records = "{" + ", ".join(str(track.track_id) for track in main.tracks) + "}"
+    script = f'''
+tell application "{app_name}"
+    repeat with trackId in {records}
+        try
+            set aTrack to (first track of library playlist 1 whose id is trackId)
+            if (count of artwork of aTrack) > 0 then
+                set artworkFile to open for access (POSIX file "{destination}") with write permission
+                set eof artworkFile to 0
+                write (data of artwork 1 of aTrack) to artworkFile
+                close access artworkFile
+                return "OK"
+            end if
+        on error
+            try
+                close access artworkFile
+            end try
+        end try
+    end repeat
+    return "NO_ARTWORK"
+end tell
+'''
+    return run_osascript(script).strip() == "OK"
+
+
+def inherit_artwork(app_name: str, main: CombineBucket, changed_tracks: list[TrackSnapshot], group_id: str) -> int:
+    if not changed_tracks:
+        return 0
+    with tempfile.TemporaryDirectory(prefix="music-combine-artwork-") as temp_dir:
+        image_path = Path(temp_dir) / "main-artwork.pct"
+        if not export_main_artwork(app_name, main, image_path):
+            return 0
+        track_ids = [track.track_id for track in changed_tracks]
+        save_artwork_undo_for_track_ids(app_name, track_ids, group_id=group_id)
+        return apply_artwork_to_track_ids(app_name, image_path, track_ids)
+
+
+def save_combine_report(plan: str, summary: str | None = None) -> Path:
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    path = REPORT_DIR / "latest-smart-combine.txt"
+    lines = [plan]
+    if summary:
+        lines.extend(["", summary])
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
 def format_plan(
     main: CombineBucket,
     bonus_buckets: list[CombineBucket],
@@ -178,8 +289,20 @@ def main(argv: list[str] | None = None) -> int:
         description="Combine selected related albums into one multi-disc album."
     )
     parser.add_argument("--main-album", help="Album title to use as disc 1.")
-    parser.add_argument("--album", help="Combined album title. Defaults to the main album title.")
+    parser.add_argument("--pick-main", action="store_true", help="Choose the main album from the selected albums.")
+    parser.add_argument("--album", help="Combined album title. Defaults to the selected naming mode.")
     parser.add_argument("--album-artist", help="Combined album artist. Defaults to the main album artist.")
+    parser.add_argument(
+        "--name-mode",
+        choices=["main", "deluxe", "plus"],
+        default="main",
+        help="Combined album naming mode when --album is not supplied.",
+    )
+    parser.add_argument(
+        "--inherit-artwork",
+        action="store_true",
+        help="Apply the main album artwork to tracks moved from remix/bonus albums.",
+    )
     parser.add_argument("--yes", action="store_true", help="Apply without confirmation.")
     parser.add_argument("--dry-run", action="store_true", help="Print the plan without changing Music.")
     parser.add_argument(
@@ -201,15 +324,18 @@ def main(argv: list[str] | None = None) -> int:
             if not matches:
                 raise RuntimeError(f"Selected tracks do not include album {args.main_album!r}.")
             main_bucket = matches[0]
+        elif args.pick_main:
+            main_bucket = choose_main_bucket_interactive(buckets)
         else:
             main_bucket = choose_main_bucket(buckets)
 
         bonus_buckets = [bucket for bucket in buckets if bucket is not main_bucket]
         bonus_buckets.sort(key=lambda bucket: (remix_score(bucket.album) == 0, normalize(bucket.album)))
 
-        combined_album = args.album or main_bucket.album
+        combined_album = combined_album_name(main_bucket, args.name_mode, args.album)
         combined_album_artist = args.album_artist or main_bucket.album_artist or main_bucket.artist
         warnings = relatedness_warnings(main_bucket, bonus_buckets)
+        warnings.extend(duplicate_warnings([main_bucket, *bonus_buckets]))
         changes = build_changes(
             main_bucket,
             bonus_buckets,
@@ -231,18 +357,28 @@ def main(argv: list[str] | None = None) -> int:
         )
         if args.dry_run:
             print(plan)
+            report_path = save_combine_report(plan)
+            print(f"\nReport: {report_path}")
             return 0
         if not args.yes and not confirm_apply("Smart Combine Albums", plan):
             raise RuntimeError("Smart combine cancelled.")
 
         group_id = f"smart-combine-{uuid.uuid4()}"
+        changed_tracks = [change.before for change in changes]
         updated = apply_tag_changes(
             app_name,
             changes,
             undo_action="smart album combine",
             undo_group_id=group_id,
         )
+        artwork_updated = 0
+        if args.inherit_artwork:
+            artwork_updated = inherit_artwork(app_name, main_bucket, changed_tracks, group_id)
         summary = f"Smart combined {len(buckets)} album(s) into {combined_album}: updated {updated} track(s)."
+        if args.inherit_artwork:
+            summary += f" Main artwork copied to {artwork_updated} track(s)."
+        report_path = save_combine_report(plan, summary)
+        summary += f" Report: {report_path}"
         print(summary)
         notify("Smart combine complete", summary)
         return 0

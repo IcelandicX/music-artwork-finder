@@ -16,7 +16,7 @@ Artwork is fetched from the **iTunes Search API**, **MusicBrainz / Cover Art Arc
 
 ### macOS installer (recommended)
 
-**[Download MusicFix-1.1.3.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.3/MusicFix-1.1.3.pkg)** — open it and follow the prompts.
+**[Download MusicFix-1.1.4.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.4/MusicFix-1.1.4.pkg)** — open it and follow the prompts.
 
 For other versions, see [GitHub Releases](https://github.com/IcelandicX/music-artwork-finder/releases).
 
@@ -86,6 +86,8 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-find
 | **Resolve Split Album(s)** | Find and combine split album(s) or song(s) under one album; auto-applies |
 | **AI Deep Dive Resolve** | Use song-title, track-count, album-variant, and deep-search evidence to pick the best merge; auto-applies |
 | **Smart Combine Main + Remix Album** | Combine selected related albums into one multi-disc album, e.g. main album as disc 1 and remixes as disc 2 |
+| **Smart Combine: Choose Main...** | Pick which selected album becomes disc 1 before combining |
+| **Smart Combine with Main Artwork** | Combine and copy the main album artwork to moved remix/bonus tracks |
 | **Undo Last Metadata Change** | Restore the previous tags or artwork; grouped all-in-one runs undo together |
 | **Open Last Fix Report** | Open the latest text report from an all-in-one run |
 | **Clear AI Search Cache** | Remove cached release, artwork, and tracklist search results |
@@ -183,10 +185,16 @@ Combine selected related albums into one multi-disc album. For example, select `
 music-combine              # preview first, then confirm
 music-combine --dry-run
 music-combine --yes        # apply without confirmation
+music-combine --pick-main
 music-combine --main-album "Fever Ray"
 music-combine --album "Fever Ray"
+music-combine --name-mode deluxe
+music-combine --name-mode plus
+music-combine --inherit-artwork
 music-combine --renumber   # optional: renumber each disc from 1
 ```
+
+Smart Combine warns about duplicate-looking track titles before applying and writes the latest combine report to `~/.music-artwork-finder/reports/latest-smart-combine.txt`.
 
 ### `music-undo`
 
@@ -237,7 +245,7 @@ Legacy alias: `find-album-artwork` → same as `music-artwork`.
 
 - **Deep search** queries multiple services, deduplicates results, ranks them with the same album/artist scoring rules, and caches release/artwork/tracklist results for faster repeat runs.
 - **Split album resolve** finds song(s) tagged under different album or artist names that belong together, looks up the correct release online, and merges them under one album.
-- **Smart Combine** turns related selected albums into one multi-disc album while preserving track titles and artists.
+- **Smart Combine** turns related selected albums into one multi-disc album while preserving track titles and artists, warning about duplicate-looking titles and optionally copying the main album artwork.
 - **Fast AI mode** only fetches related album candidates around the current selection instead of scanning every track in the library.
 - **Low-confidence safety** asks for confirmation before auto-applying weaker all-in-one matches.
 - **Preferences** store saved defaults in `~/.music-artwork-finder/preferences.json`.
@@ -284,6 +292,7 @@ Remove the `PATH` line from `~/.zprofile` if you no longer need it.
 ```bash
 ./install.sh                 # re-run after code changes
 ./packaging/build-pkg.sh     # build dist/MusicFix-<version>.pkg
+./scripts/tag-release.sh     # tag v<VERSION> and trigger release packaging
 python3 assets/generate-icons.py  # rebuild icons from assets/icon-source.png
 python3 menu_bar.py          # run menu bar app in foreground for debugging
 ```

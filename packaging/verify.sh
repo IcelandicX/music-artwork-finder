@@ -28,6 +28,7 @@ python3 -m py_compile \
 echo "Checking shell syntax..."
 bash -n install.sh
 bash -n scripts/setup-user.sh
+bash -n scripts/tag-release.sh
 bash -n packaging/build-pkg.sh
 bash -n packaging/scripts/preinstall
 bash -n packaging/scripts/postinstall

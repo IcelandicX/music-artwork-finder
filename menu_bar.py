@@ -57,6 +57,8 @@ class ArtworkMenuBarApp(rumps.App):
             "Resolve Split Album(s)",
             "AI Deep Dive Resolve",
             "Smart Combine Main + Remix Album",
+            "Smart Combine: Choose Main...",
+            "Smart Combine with Main Artwork",
             None,
             "Undo Last Metadata Change",
             "Open Last Fix Report",
@@ -129,6 +131,14 @@ class ArtworkMenuBarApp(rumps.App):
     @rumps.clicked("Smart Combine Main + Remix Album")
     def smart_combine_main_remix(self, _: rumps.MenuItem) -> None:
         self._run_script(MUSIC_COMBINE, [], title="Smart album combine")
+
+    @rumps.clicked("Smart Combine: Choose Main...")
+    def smart_combine_choose_main(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_COMBINE, ["--pick-main"], title="Smart album combine")
+
+    @rumps.clicked("Smart Combine with Main Artwork")
+    def smart_combine_with_artwork(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_COMBINE, ["--inherit-artwork"], title="Smart album combine")
 
     @rumps.clicked("Undo Last Metadata Change")
     def undo_last_change(self, _: rumps.MenuItem) -> None:
