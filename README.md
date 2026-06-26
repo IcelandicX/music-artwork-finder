@@ -185,7 +185,7 @@ music-combine --dry-run
 music-combine --yes        # apply without confirmation
 music-combine --main-album "Fever Ray"
 music-combine --album "Fever Ray"
-music-combine --preserve-main-numbers
+music-combine --renumber   # optional: renumber each disc from 1
 ```
 
 ### `music-undo`

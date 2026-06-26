@@ -114,20 +114,23 @@ def build_changes(
     bonus_buckets: list[CombineBucket],
     combined_album: str,
     combined_album_artist: str,
-    preserve_main_numbers: bool,
+    renumber: bool,
 ) -> list[TagChange]:
     changes: list[TagChange] = []
     ordered_buckets = [main, *bonus_buckets]
     for disc_index, bucket in enumerate(ordered_buckets, start=1):
         for track_index, track in enumerate(bucket.tracks, start=1):
-            track_number = track.track_number if preserve_main_numbers and disc_index == 1 else track_index
+            track_number = track_index if renumber else track.track_number or track_index
+            disc_number = disc_index
+            if not renumber and bucket is main:
+                disc_number = track.disc_number or 1
             after = TrackTags(
                 title=track.title,
                 artist=track.artist,
                 album=combined_album,
                 album_artist=combined_album_artist,
                 track_number=track_number,
-                disc_number=disc_index,
+                disc_number=disc_number,
                 year=track.year,
                 genre=track.genre,
             )
@@ -180,9 +183,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--yes", action="store_true", help="Apply without confirmation.")
     parser.add_argument("--dry-run", action="store_true", help="Print the plan without changing Music.")
     parser.add_argument(
-        "--preserve-main-numbers",
+        "--renumber",
         action="store_true",
-        help="Keep existing track numbers on the main album.",
+        help="Renumber tracks from 1 on each disc instead of preserving current track numbers.",
     )
     args = parser.parse_args(argv)
 
@@ -212,7 +215,7 @@ def main(argv: list[str] | None = None) -> int:
             bonus_buckets,
             combined_album,
             combined_album_artist,
-            preserve_main_numbers=args.preserve_main_numbers,
+            renumber=args.renumber,
         )
         if not changes:
             print("Selected albums already match the smart combine plan.")

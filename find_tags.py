@@ -416,6 +416,7 @@ def apply_tag_changes(
     records: list[str] = []
     for change in changes:
         after = change.after
+        before = change.before
         records.append(
             FIELD_SEP.join(
                 [
@@ -428,6 +429,10 @@ def apply_tag_changes(
                     "" if after.disc_number is None else str(after.disc_number),
                     "" if after.year is None else str(after.year),
                     after.genre or "",
+                    before.title,
+                    before.artist,
+                    before.album,
+                    before.album_artist or "",
                 ]
             )
         )
@@ -449,7 +454,22 @@ tell application "{app_name}"
         set newDiscNumber to item 7 of parts
         set newYear to item 8 of parts
         set newGenre to item 9 of parts
-        set theTrack to (first track of library playlist 1 whose id is trackId)
+        set oldTitle to item 10 of parts
+        set oldArtist to item 11 of parts
+        set oldAlbum to item 12 of parts
+        set oldAlbumArtist to item 13 of parts
+        try
+            set theTrack to (first track of library playlist 1 whose id is trackId)
+        on error
+            set matchingTracks to (every track of library playlist 1 whose name is oldTitle and artist is oldArtist and album is oldAlbum)
+            if (count of matchingTracks) is 0 and oldAlbumArtist is not "" then
+                set matchingTracks to (every track of library playlist 1 whose name is oldTitle and album is oldAlbum and album artist is oldAlbumArtist)
+            end if
+            if (count of matchingTracks) is 0 then
+                error "Could not find track to update: " & oldArtist & " - " & oldAlbum & " - " & oldTitle
+            end if
+            set theTrack to item 1 of matchingTracks
+        end try
         set name of theTrack to newTitle
         set artist of theTrack to newArtist
         set album of theTrack to newAlbum
