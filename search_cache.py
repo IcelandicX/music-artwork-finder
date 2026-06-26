@@ -9,6 +9,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from preferences import load_preferences
+
 
 CACHE_DIR = Path.home() / ".music-artwork-finder" / "cache"
 DEFAULT_TTL_SECONDS = 24 * 60 * 60
@@ -19,7 +21,9 @@ def _cache_path(namespace: str, key: str) -> Path:
     return CACHE_DIR / namespace / f"{safe_key}.json"
 
 
-def load_cache(namespace: str, key: str, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> Any | None:
+def load_cache(namespace: str, key: str, ttl_seconds: int | None = None) -> Any | None:
+    if ttl_seconds is None:
+        ttl_seconds = int(load_preferences().get("cache_ttl_hours", 24)) * 60 * 60
     path = _cache_path(namespace, key)
     if not path.exists():
         return None

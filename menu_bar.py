@@ -19,6 +19,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 FIND_ARTWORK = SCRIPT_DIR / "find_artwork.py"
 FIND_TAGS = SCRIPT_DIR / "find_tags.py"
 MUSIC_AI = SCRIPT_DIR / "music_ai.py"
+MUSIC_DOCTOR = SCRIPT_DIR / "music_doctor.py"
+MUSIC_PREFS = SCRIPT_DIR / "music_prefs.py"
 FIX_ALBUM = SCRIPT_DIR / "fix_album.py"
 RESOLVE_SPLITS = SCRIPT_DIR / "resolve_splits.py"
 UNDO_LAST = SCRIPT_DIR / "undo_last.py"
@@ -38,6 +40,8 @@ class ArtworkMenuBarApp(rumps.App):
         )
         self.menu = [
             "AI All-in-One Fix",
+            "AI All-in-One Preview First",
+            "AI All-in-One Dry Run",
             None,
             "Fix Tags and Artwork",
             None,
@@ -53,17 +57,28 @@ class ArtworkMenuBarApp(rumps.App):
             "AI Deep Dive Resolve",
             None,
             "Undo Last Metadata Change",
+            "Open Last Fix Report",
             "Clear AI Search Cache",
             None,
             "Fix Missing Artwork",
             "Fix Tags in Library",
             None,
+            "Preferences",
+            "Run Setup Check",
             "About",
         ]
 
     @rumps.clicked("AI All-in-One Fix")
     def ai_all_in_one_fix(self, _: rumps.MenuItem) -> None:
-        self._run_script(MUSIC_AI, [], title="AI all-in-one fix")
+        self._run_script(MUSIC_AI, ["--auto-apply"], title="AI all-in-one fix")
+
+    @rumps.clicked("AI All-in-One Preview First")
+    def ai_all_in_one_preview(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_AI, ["--preview"], title="AI all-in-one preview")
+
+    @rumps.clicked("AI All-in-One Dry Run")
+    def ai_all_in_one_dry_run(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_AI, ["--dry-run"], title="AI all-in-one dry run")
 
     @rumps.clicked("Fix Tags and Artwork")
     def fix_tags_and_artwork(self, _: rumps.MenuItem) -> None:
@@ -111,14 +126,30 @@ class ArtworkMenuBarApp(rumps.App):
 
     @rumps.clicked("Undo Last Metadata Change")
     def undo_last_change(self, _: rumps.MenuItem) -> None:
+        preview = subprocess.run(
+            [sys.executable, str(UNDO_LAST), "--dry-run"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        preview_text = (preview.stdout or preview.stderr or "").strip()
         response = rumps.alert(
             title="Undo Last Metadata Change",
-            message="Restore the previous metadata saved before the last tag or split-album change?",
+            message=preview_text or "Restore the latest saved tags or artwork?",
             ok="Undo",
             cancel="Cancel",
         )
         if response == 1:
             self._run_script(UNDO_LAST, [], title="Music Fix undo")
+
+    @rumps.clicked("Open Last Fix Report")
+    def open_last_fix_report(self, _: rumps.MenuItem) -> None:
+        report_dir = Path.home() / ".music-artwork-finder" / "reports"
+        reports = sorted(report_dir.glob("*.txt")) if report_dir.exists() else []
+        if not reports:
+            rumps.alert(title="Fix Reports", message="No fix reports found.", ok="OK")
+            return
+        subprocess.run(["open", str(reports[-1])], check=False)
 
     @rumps.clicked("Clear AI Search Cache")
     def clear_ai_search_cache(self, _: rumps.MenuItem) -> None:
@@ -170,6 +201,14 @@ class ArtworkMenuBarApp(rumps.App):
                 ["--batch", "--limit", "20"],
                 title="Batch tag update",
             )
+
+    @rumps.clicked("Preferences")
+    def preferences(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_PREFS, ["show"], title="Music Fix preferences")
+
+    @rumps.clicked("Run Setup Check")
+    def run_setup_check(self, _: rumps.MenuItem) -> None:
+        self._run_script(MUSIC_DOCTOR, [], title="Music Fix setup check")
 
     @rumps.clicked("About")
     def about(self, _: rumps.MenuItem) -> None:

@@ -10,9 +10,13 @@ python3 -m py_compile \
     find_tags.py \
     music_ai.py \
     music_cache.py \
+    music_doctor.py \
+    music_prefs.py \
     fix_album.py \
     menu_bar.py \
     music_common.py \
+    preferences.py \
+    run_report.py \
     search_cache.py \
     search_providers.py \
     resolve_splits.py \

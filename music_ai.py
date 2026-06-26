@@ -7,6 +7,7 @@ import argparse
 import sys
 
 from fix_album import main as fix_album_main
+from preferences import load_preferences
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -20,6 +21,11 @@ def main(argv: list[str] | None = None) -> int:
         "--preview",
         action="store_true",
         help="Show a confirmation preview before applying.",
+    )
+    parser.add_argument(
+        "--auto-apply",
+        action="store_true",
+        help="Apply confident matches immediately, overriding saved run_mode.",
     )
     parser.add_argument(
         "--no-preview",
@@ -45,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--confirm-below",
         type=float,
-        default=0.60,
+        default=None,
         help="Ask before applying matches below this confidence score (default: 0.60).",
     )
     parser.add_argument(
@@ -59,6 +65,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip re-embedding artwork after applying it.",
     )
     args = parser.parse_args(argv)
+    prefs = load_preferences()
+    run_mode = prefs["run_mode"]
+    if args.auto_apply:
+        run_mode = "auto"
+    if args.preview:
+        run_mode = "preview"
+    if args.dry_run:
+        run_mode = "dry-run"
+    confirm_below = args.confirm_below
+    if confirm_below is None:
+        confirm_below = float(prefs["confirm_below"])
 
     fix_args = [
         "--resolve-splits",
@@ -66,13 +83,15 @@ def main(argv: list[str] | None = None) -> int:
         "--min-score",
         str(args.min_score),
         "--confirm-below",
-        str(args.confirm_below),
+        str(confirm_below),
+        "--run-mode",
+        run_mode,
     ]
-    if args.preview and not args.dry_run:
+    if run_mode == "preview":
         fix_args.append("--preview")
-    if args.dry_run:
+    if run_mode == "dry-run":
         fix_args.append("--dry-run")
-    if args.selection_only:
+    if args.selection_only or bool(prefs["selection_only"]):
         fix_args.append("--selection-only")
     if args.pick:
         fix_args.append("--pick")

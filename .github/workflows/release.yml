@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - "v*"
   release:
     types: [published]
   workflow_dispatch:
@@ -13,6 +16,17 @@ jobs:
 
       - name: Build installer
         run: ./packaging/verify.sh
+
+      - name: Create release for tag
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          gh release create "${GITHUB_REF_NAME}" \
+            "dist/MusicFix-${VERSION}.pkg" \
+            --title "Music Fix ${VERSION}" \
+            --notes "Music Fix ${VERSION}"
 
       - name: Upload pkg to release
         if: github.event_name == 'release'

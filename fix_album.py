@@ -26,6 +26,7 @@ from find_tags import (
     process_tags,
 )
 from music_common import choose_release_match, confirm_apply, get_all_library_albums
+from run_report import save_run_report
 from resolve_splits import auto_resolve_for_selection
 
 
@@ -293,6 +294,12 @@ def main(argv: list[str] | None = None) -> int:
         default=0.60,
         help="Ask before applying matches below this confidence score (default: 0.60).",
     )
+    parser.add_argument(
+        "--run-mode",
+        choices=["auto", "preview", "dry-run"],
+        default="auto",
+        help="Label the current run mode in reports.",
+    )
     args = parser.parse_args(argv)
 
     fix_tags = not args.artwork_only
@@ -338,7 +345,15 @@ def main(argv: list[str] | None = None) -> int:
                 failures.append(f"{album.artist} — {album.album}: {exc}")
 
         if args.dry_run:
+            report_path = save_run_report(
+                "AI All-in-One Fix",
+                args.run_mode,
+                summaries,
+                failures,
+                undo_group_id=undo_group_id,
+            )
             print("\n\n".join(summaries + [f"Skipped: {item}" for item in failures]))
+            print(f"\nReport: {report_path}")
             return 0 if not failures else 1
 
         if summaries:
@@ -348,6 +363,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Skipped: {failure}", file=sys.stderr)
 
         summary = f"All-in-one finished: {len(summaries)} album(s) fixed, {len(failures)} failed."
+        report_path = save_run_report(
+            "AI All-in-One Fix",
+            args.run_mode,
+            summaries,
+            failures,
+            undo_group_id=undo_group_id,
+        )
+        print(f"Report: {report_path}")
         notify("Album fix complete", summary)
         if failures and not summaries:
             raise RuntimeError("; ".join(failures))

@@ -16,14 +16,14 @@ Artwork is fetched from the **iTunes Search API**, **MusicBrainz / Cover Art Arc
 
 ### macOS installer (recommended)
 
-**[Download MusicFix-1.1.1.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.1/MusicFix-1.1.1.pkg)** — open it and follow the prompts.
+**[Download MusicFix-1.1.2.pkg](https://github.com/IcelandicX/music-artwork-finder/releases/download/v1.1.2/MusicFix-1.1.2.pkg)** — open it and follow the prompts.
 
 For other versions, see [GitHub Releases](https://github.com/IcelandicX/music-artwork-finder/releases).
 
 The installer:
 
 - Installs files to `/usr/local/share/music-artwork-finder`
-- Adds CLI commands to `/usr/local/bin` (`music-ai`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-undo`, `music-cache`)
+- Adds CLI commands to `/usr/local/bin` (`music-ai`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-undo`, `music-cache`, `music-prefs`, `music-doctor`)
 - Installs Python dependencies for your user account (`rumps` for the menu bar app)
 - Registers a **LaunchAgent** so the **Music Fix** menu bar app starts at login
 
@@ -46,7 +46,7 @@ cd music-artwork-finder
 
 The source installer:
 
-- Adds CLI commands to `~/.local/bin` (`music-ai`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-undo`, `music-cache`)
+- Adds CLI commands to `~/.local/bin` (`music-ai`, `music-artwork`, `music-tags`, `music-fix`, `music-splits`, `music-undo`, `music-cache`, `music-prefs`, `music-doctor`)
 - Installs Python dependencies (`rumps` for the menu bar app)
 - Registers a **LaunchAgent** so the **Music Fix** menu bar app starts at login
 
@@ -74,6 +74,8 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-find
 | Menu item | What it does |
 | --- | --- |
 | **AI All-in-One Fix** | Deep-resolve split album(s), fix tags, find artwork, show per-album progress, auto-apply confident matches, and save undo metadata |
+| **AI All-in-One Preview First** | Run the all-in-one workflow with a confirmation preview before applying |
+| **AI All-in-One Dry Run** | Show what would happen without changing Music |
 | **Fix Tags and Artwork** | One MusicBrainz match for both tags and cover art; auto-applies |
 | **Find Artwork for Selected Album(s)** | Best artwork match; auto-applies |
 | **Choose Artwork...** | Pick from multiple artwork candidates |
@@ -84,9 +86,12 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.music-artwork-find
 | **Resolve Split Album(s)** | Find and combine split album(s) or song(s) under one album; auto-applies |
 | **AI Deep Dive Resolve** | Use song-title, track-count, album-variant, and deep-search evidence to pick the best merge; auto-applies |
 | **Undo Last Metadata Change** | Restore the previous tags or artwork; grouped all-in-one runs undo together |
+| **Open Last Fix Report** | Open the latest text report from an all-in-one run |
 | **Clear AI Search Cache** | Remove cached release, artwork, and tracklist search results |
 | **Fix Missing Artwork** | Batch: up to 20 albums missing artwork |
 | **Fix Tags in Library** | Batch: up to 20 albums with incorrect tags |
+| **Preferences** | Show saved defaults such as run mode and confidence threshold |
+| **Run Setup Check** | Check CLI links, menu bar LaunchAgent, Music automation, internet, API keys, cache, and preferences |
 
 ## Command-line usage
 
@@ -103,9 +108,10 @@ music-ai --preview
 music-ai --selection-only
 music-ai --pick
 music-ai --confirm-below 0.7
+music-ai --auto-apply
 ```
 
-AI All-in-One prints progress for each selected album. If a release or artwork match is below the confidence threshold, it asks before applying even though auto-apply is the default.
+AI All-in-One prints progress for each selected album and writes a text report to `~/.music-artwork-finder/reports`. If a release or artwork match is below the confidence threshold, it asks before applying even though auto-apply is the default.
 
 ### `music-artwork`
 
@@ -189,6 +195,28 @@ music-cache clear
 music-cache clear --namespace release-tags
 ```
 
+### `music-prefs`
+
+Inspect or change saved defaults used by `music-ai`.
+
+```bash
+music-prefs show
+music-prefs set run_mode preview
+music-prefs set confirm_below 0.7
+music-prefs set selection_only true
+music-prefs reset
+```
+
+Valid run modes are `auto`, `preview`, and `dry-run`.
+
+### `music-doctor`
+
+Run first-use diagnostics.
+
+```bash
+music-doctor
+```
+
 Legacy alias: `find-album-artwork` → same as `music-artwork`.
 
 ## How matching works
@@ -197,6 +225,8 @@ Legacy alias: `find-album-artwork` → same as `music-artwork`.
 - **Split album resolve** finds song(s) tagged under different album or artist names that belong together, looks up the correct release online, and merges them under one album.
 - **Fast AI mode** only fetches related album candidates around the current selection instead of scanning every track in the library.
 - **Low-confidence safety** asks for confirmation before auto-applying weaker all-in-one matches.
+- **Preferences** store saved defaults in `~/.music-artwork-finder/preferences.json`.
+- **Fix reports** summarize all-in-one runs and include retry/undo hints.
 - **AI Deep Dive Resolve** scores candidates using selected song titles, local vs. release track counts, album-title variants, artist and album-artist clues, plus deep-search release matches before choosing a merge target.
 - **Artist names** are normalized (parenthetical credits like `Fever Ray (Karin Dreijer Andersson)` are stripped for search).
 - **Live albums** are scored carefully so a different venue or city does not win over the correct release.
@@ -224,10 +254,12 @@ rm -f ~/Library/LaunchAgents/com.music-artwork-finder.plist
 rm -f /usr/local/bin/music-artwork /usr/local/bin/find-album-artwork
 rm -f /usr/local/bin/music-tags /usr/local/bin/music-fix
 rm -f /usr/local/bin/music-ai /usr/local/bin/music-splits /usr/local/bin/music-undo /usr/local/bin/music-cache
+rm -f /usr/local/bin/music-prefs /usr/local/bin/music-doctor
 sudo rm -rf /usr/local/share/music-artwork-finder
 rm -f ~/.local/bin/music-artwork ~/.local/bin/find-album-artwork
 rm -f ~/.local/bin/music-tags ~/.local/bin/music-fix
 rm -f ~/.local/bin/music-ai ~/.local/bin/music-splits ~/.local/bin/music-undo ~/.local/bin/music-cache
+rm -f ~/.local/bin/music-prefs ~/.local/bin/music-doctor
 ```
 
 Remove the `PATH` line from `~/.zprofile` if you no longer need it.
@@ -240,6 +272,8 @@ Remove the `PATH` line from `~/.zprofile` if you no longer need it.
 python3 assets/generate-icons.py  # rebuild icons from assets/icon-source.png
 python3 menu_bar.py          # run menu bar app in foreground for debugging
 ```
+
+Pushing a `v*` tag creates a GitHub release and uploads the matching `.pkg`.
 
 ## Contributing
 
